@@ -36,13 +36,17 @@ currentMonth.setDate(1);
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (!parsed.projects) parsed.projects = [];
+      return parsed;
+    }
   } catch (e) {
     console.warn("Lecture des données impossible, redémarrage propre.", e);
   }
   // Premier lancement : on pré-charge l'historique importé du fichier Excel.
   const seeded = SEED_TRANSACTIONS.map(t => ({ ...t, id: uid() }));
-  return { categories: DEFAULT_CATEGORIES, transactions: seeded };
+  return { categories: DEFAULT_CATEGORIES, transactions: seeded, projects: [] };
 }
 
 function saveState() {
@@ -88,6 +92,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "history") renderHistory();
   if (btn.dataset.tab === "yearly") renderYearlyComparison();
   if (btn.dataset.tab === "monthly") renderMonthlyPivot();
+  if (btn.dataset.tab === "projects") renderProjects();
 });
 
 /* ---------------- Navigation entre mois ---------------- */
@@ -348,6 +353,102 @@ document.getElementById("historyBody").addEventListener("click", (e) => {
   saveState();
   renderHistory();
   renderDashboard();
+});
+
+/* ---------------- Mes projets ---------------- */
+function monthsUntil(dateStr) {
+  const today = new Date();
+  const target = new Date(dateStr);
+  let months = (target.getFullYear() - today.getFullYear()) * 12 + (target.getMonth() - today.getMonth());
+  if (target.getDate() < today.getDate()) months -= 1;
+  return Math.max(0, months);
+}
+
+function renderProjects() {
+  const list = document.getElementById("projectList");
+  list.innerHTML = "";
+
+  if (state.projects.length === 0) {
+    list.innerHTML = `<p class="empty-state">Aucun projet pour l'instant. Crée-en un ci-dessous, par exemple « Vacances » ou « Réparation voiture ».</p>`;
+    return;
+  }
+
+  state.projects.forEach(p => {
+    const pct = p.target > 0 ? Math.min(100, Math.round((p.saved / p.target) * 100)) : 0;
+    const realPct = p.target > 0 ? Math.round((p.saved / p.target) * 100) : 0;
+    let cls = "ok";
+    if (realPct >= 100) cls = "over";
+    else if (realPct >= 80) cls = "warn";
+
+    let deadlineHtml = "";
+    if (p.date) {
+      const remaining = p.target - p.saved;
+      const months = monthsUntil(p.date);
+      const [y, m, d] = p.date.split("-");
+      if (remaining <= 0) {
+        deadlineHtml = `<p class="project-deadline">🎉 Objectif atteint avant le <strong>${d}/${m}/${y}</strong></p>`;
+      } else if (months === 0) {
+        deadlineHtml = `<p class="project-deadline">Échéance ce mois-ci — il manque <strong>${money(remaining)}</strong></p>`;
+      } else {
+        deadlineHtml = `<p class="project-deadline">Échéance le <strong>${d}/${m}/${y}</strong> (${months} mois) → épargner <strong>${money(remaining / months)}</strong>/mois</p>`;
+      }
+    }
+
+    const card = document.createElement("div");
+    card.className = "project-card";
+    card.innerHTML = `
+      <div class="project-top">
+        <div>
+          <div class="project-name">${p.name}</div>
+          ${p.note ? `<p class="project-note">${p.note}</p>` : ""}
+        </div>
+        <button class="icon-btn" data-delete-project="${p.id}" aria-label="Supprimer ${p.name}">✕</button>
+      </div>
+      <div class="gauge-track">
+        <div class="gauge-fill ${cls}" style="width:${pct}%"></div>
+      </div>
+      <div class="project-figures">${money(p.saved)} / ${money(p.target)} (${realPct}%)</div>
+      ${deadlineHtml}
+      <div class="project-editrow">
+        <label>Mettre à jour l'épargné :
+          <input type="number" min="0" step="1" value="${p.saved}" data-saved-for="${p.id}" aria-label="Montant épargné pour ${p.name}">
+        </label>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+document.getElementById("projectList").addEventListener("change", (e) => {
+  const id = e.target.dataset.savedFor;
+  if (!id) return;
+  const p = state.projects.find(pr => pr.id === id);
+  p.saved = parseFloat(e.target.value) || 0;
+  saveState();
+  renderProjects();
+});
+
+document.getElementById("projectList").addEventListener("click", (e) => {
+  const id = e.target.dataset.deleteProject;
+  if (!id) return;
+  if (!confirm("Supprimer ce projet ?")) return;
+  state.projects = state.projects.filter(p => p.id !== id);
+  saveState();
+  renderProjects();
+});
+
+const projectForm = document.getElementById("projectForm");
+projectForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("projName").value.trim();
+  const target = parseFloat(document.getElementById("projTarget").value) || 0;
+  const saved = parseFloat(document.getElementById("projSaved").value) || 0;
+  const date = document.getElementById("projDate").value || null;
+  const note = document.getElementById("projNote").value.trim();
+  if (!name || target <= 0) return;
+  state.projects.push({ id: uid(), name, target, saved, date, note });
+  saveState();
+  projectForm.reset();
+  renderProjects();
 });
 
 /* ---------------- Comparatif annuel (repère Excel) ---------------- */

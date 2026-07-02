@@ -1,4 +1,4 @@
-# Mon Cahier de Budget
+# Paeonia
 
 Application de suivi de budget personnel, simple et privée : toutes les données restent sur votre appareil (aucun serveur, aucun compte requis).
 

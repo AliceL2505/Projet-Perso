@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Budget</title>
+<title>Paeonia</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +12,7 @@
 <div id="lockScreen" class="lock-screen">
   <form id="lockForm" class="lock-card">
     <span class="lock-icon">🔒</span>
-    <h1>Mon Budget</h1>
+    <h1>Paeonia</h1>
     <p>Entrez le mot de passe pour continuer.</p>
     <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="off" required autofocus>
     <button type="submit" class="btn-primary">Déverrouiller</button>
@@ -26,12 +26,13 @@
   <nav class="sidebar" id="tabs">
     <div class="sidebar-title">
       <span class="topbar-mark">✒︎</span>
-      <h1>Mon Budget</h1>
+      <h1>Paeonia</h1>
     </div>
     <button class="tab active" data-tab="dashboard">Tableau de bord</button>
     <button class="tab" data-tab="add">Ajouter</button>
     <button class="tab" data-tab="categories">Catégories</button>
     <button class="tab" data-tab="history">Historique</button>
+    <button class="tab" data-tab="projects">Mes projets</button>
     <div class="sidebar-divider"></div>
     <p class="sidebar-group-label">Repères Excel</p>
     <button class="tab" data-tab="yearly">Comparatif annuel</button>
@@ -162,6 +163,37 @@
           <tbody id="historyBody"></tbody>
         </table>
         <p class="empty-state" id="historyEmpty" style="display:none;">Aucune opération ce mois-ci. Ajoutez-en une depuis l'onglet « Ajouter ».</p>
+      </section>
+
+      <!-- MES PROJETS -->
+      <section class="tab-panel" id="panel-projects">
+        <h2 class="section-title">Mes projets</h2>
+        <p class="hint">Anticipe une dépense future (vacances, réparation, achat...) et suis ton épargne dédiée.</p>
+        <div class="project-list" id="projectList"></div>
+
+        <h2 class="section-title">Nouveau projet</h2>
+        <form id="projectForm" class="form-card">
+          <div class="field-row">
+            <label>Nom du projet
+              <input type="text" id="projName" placeholder="Ex : Vacances été 2027" required>
+            </label>
+            <label>Montant objectif (€)
+              <input type="number" id="projTarget" min="0" step="1" placeholder="1000" required>
+            </label>
+          </div>
+          <div class="field-row">
+            <label>Déjà mis de côté (€)
+              <input type="number" id="projSaved" min="0" step="1" placeholder="0">
+            </label>
+            <label>Date cible (optionnel)
+              <input type="date" id="projDate">
+            </label>
+          </div>
+          <label>Note (optionnel)
+            <input type="text" id="projNote" placeholder="Ex : Croatie avec Marion">
+          </label>
+          <button type="submit" class="btn-secondary">Créer le projet</button>
+        </form>
       </section>
 
       <!-- COMPARATIF ANNUEL -->
