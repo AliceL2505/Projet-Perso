@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Paeonia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -11,7 +14,16 @@
 
 <div id="lockScreen" class="lock-screen">
   <form id="lockForm" class="lock-card">
-    <span class="lock-icon">🔒</span>
+    <span class="paeonia-mark">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="7" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="16.76" cy="10.46" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="14.94" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="9.06" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="7.24" cy="10.46" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="12" cy="12" r="2.4" fill="#E7C8CF"/>
+      </svg>
+    </span>
     <h1>Paeonia</h1>
     <p>Entrez le mot de passe pour continuer.</p>
     <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="off" required autofocus>
@@ -25,18 +37,27 @@
   <!-- SIDEBAR -->
   <nav class="sidebar" id="tabs">
     <div class="sidebar-title">
-      <span class="topbar-mark">✒︎</span>
+      <span class="paeonia-mark">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="7" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+          <circle cx="16.76" cy="10.46" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+          <circle cx="14.94" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+          <circle cx="9.06" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+          <circle cx="7.24" cy="10.46" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+          <circle cx="12" cy="12" r="2.4" fill="#E7C8CF"/>
+        </svg>
+      </span>
       <h1>Paeonia</h1>
     </div>
-    <button class="tab active" data-tab="dashboard">Tableau de bord</button>
-    <button class="tab" data-tab="add">Ajouter</button>
-    <button class="tab" data-tab="categories">Catégories</button>
-    <button class="tab" data-tab="history">Historique</button>
-    <button class="tab" data-tab="projects">Mes projets</button>
+    <button class="tab active" data-tab="dashboard"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>Tableau de bord</button>
+    <button class="tab" data-tab="add"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Ajouter</button>
+    <button class="tab" data-tab="categories"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3h6a2 2 0 0 1 2 2v6L9.5 20.5a2 2 0 0 1-2.8 0l-4.2-4.2a2 2 0 0 1 0-2.8L11 3Z"/><circle cx="15" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg>Catégories</button>
+    <button class="tab" data-tab="history"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>Historique</button>
+    <button class="tab" data-tab="projects"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 11C8.5 11 6 8.5 6 5c3.5 0 6 2.5 6 6Z"/><path d="M12 11c3.5 0 6-2.5 6-6-3.5 0-6 2.5-6 6Z"/></svg>Mes projets</button>
     <div class="sidebar-divider"></div>
     <p class="sidebar-group-label">Repères Excel</p>
-    <button class="tab" data-tab="yearly">Comparatif annuel</button>
-    <button class="tab" data-tab="monthly">Résumé mensuel</button>
+    <button class="tab" data-tab="yearly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><rect x="7" y="12" width="2.6" height="8"/><rect x="12.7" y="7" width="2.6" height="13"/><rect x="18.4" y="15" width="2.6" height="5"/></svg>Comparatif annuel</button>
+    <button class="tab" data-tab="monthly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3.5 10h17"/></svg>Résumé mensuel</button>
     <div class="sidebar-spacer"></div>
     <p class="sidebar-footnote">Vos données restent sur cet appareil.</p>
   </nav>

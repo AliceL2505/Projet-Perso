@@ -65,6 +65,22 @@ function moneySigned(n) {
   return (n >= 0 ? "+" : "−") + money(n);
 }
 
+function animateKpi(elId, targetValue, formatFn) {
+  const el = document.getElementById(elId);
+  const start = parseFloat(el.dataset.rawValue || "0");
+  const duration = 450;
+  const t0 = performance.now();
+  function step(now) {
+    const progress = Math.min(1, (now - t0) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = start + (targetValue - start) * eased;
+    el.textContent = formatFn(current);
+    if (progress < 1) requestAnimationFrame(step);
+    else el.dataset.rawValue = targetValue;
+  }
+  requestAnimationFrame(step);
+}
+
 function monthKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -137,10 +153,10 @@ function renderDashboard() {
     if (cat.id === "epargne" || cat.id === "epargne_tf") saved += -t.amount;
   });
 
-  document.getElementById("kpiIncome").textContent = money(income);
-  document.getElementById("kpiExpense").textContent = money(expense);
-  document.getElementById("kpiRemaining").textContent = moneySigned(income - expense);
-  document.getElementById("kpiSaved").textContent = moneySigned(saved);
+  animateKpi("kpiIncome", income, money);
+  animateKpi("kpiExpense", expense, money);
+  animateKpi("kpiRemaining", income - expense, moneySigned);
+  animateKpi("kpiSaved", saved, moneySigned);
 
   // Jauges par catégorie de dépense ayant un budget défini
   const container = document.getElementById("gaugesContainer");
