@@ -39,6 +39,42 @@ body {
   padding: 0 20px 60px;
 }
 
+/* ---------- Écran de verrouillage ---------- */
+.lock-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  padding: 20px;
+}
+.lock-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 16px;
+  padding: 36px 32px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lock-icon { font-size: 30px; }
+.lock-card h1 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0;
+}
+.lock-card p { margin: 0; color: var(--ink-soft); font-size: 13.5px; }
+.lock-card input {
+  text-align: center;
+  margin-top: 8px;
+}
+.lock-card .btn-primary { align-self: center; margin-top: 4px; }
+.lock-error { color: var(--danger); font-size: 12.5px; min-height: 14px; }
+
 /* ---------- Header ---------- */
 .topbar {
   padding: 32px 0 0;

@@ -340,5 +340,29 @@ document.getElementById("historyBody").addEventListener("click", (e) => {
   renderDashboard();
 });
 
-/* ---------------- Démarrage ---------------- */
-renderAll();
+/* ---------------- Démarrage protégé par mot de passe ---------------- */
+const LOCK_PASSWORD = "owen";
+const LOCK_SESSION_KEY = "cahierBudget_unlocked";
+
+function unlockApp() {
+  document.getElementById("lockScreen").style.display = "none";
+  document.getElementById("appRoot").style.display = "";
+  renderAll();
+}
+
+if (sessionStorage.getItem(LOCK_SESSION_KEY) === "1") {
+  unlockApp();
+} else {
+  document.getElementById("lockForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.getElementById("lockInput");
+    if (input.value.trim().toLowerCase() === LOCK_PASSWORD) {
+      sessionStorage.setItem(LOCK_SESSION_KEY, "1");
+      unlockApp();
+    } else {
+      document.getElementById("lockError").textContent = "Mot de passe incorrect.";
+      input.value = "";
+      input.focus();
+    }
+  });
+}

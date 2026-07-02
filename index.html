@@ -8,7 +8,18 @@
 </head>
 <body>
 
-<div class="app">
+<div id="lockScreen" class="lock-screen">
+  <form id="lockForm" class="lock-card">
+    <span class="lock-icon">🔒</span>
+    <h1>Mon Cahier de Budget</h1>
+    <p>Entrez le mot de passe pour continuer.</p>
+    <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="off" required autofocus>
+    <button type="submit" class="btn-primary">Déverrouiller</button>
+    <p class="lock-error" id="lockError"></p>
+  </form>
+</div>
+
+<div class="app" id="appRoot" style="display:none;">
 
   <!-- En-tête -->
   <header class="topbar">
