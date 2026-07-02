@@ -180,6 +180,41 @@ body {
   margin: 0 14px 8px;
 }
 .sidebar-spacer { flex: 1; }
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 14px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink-soft);
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.sidebar-toggle:hover { background: var(--sage-tint); color: var(--ink); }
+.sidebar-toggle.active {
+  background: var(--peony-tint);
+  border-color: var(--peony);
+  color: var(--ink);
+}
+
+/* Mode "sommes masquées" : on floute les champs pré-remplis avec de vrais montants */
+body.hide-amounts input[data-budget-for],
+body.hide-amounts input[data-saved-for] {
+  filter: blur(6px);
+  transition: filter .15s ease;
+}
+body.hide-amounts input[data-budget-for]:focus,
+body.hide-amounts input[data-saved-for]:focus {
+  filter: none;
+}
 .sidebar-footnote {
   font-size: 11.5px;
   color: var(--ink-soft);

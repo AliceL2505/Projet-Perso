@@ -57,11 +57,15 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+let hideAmounts = sessionStorage.getItem("paeonia_hideAmounts") === "1";
+
 function money(n) {
+  if (hideAmounts) return "•••• €";
   return Math.abs(n).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
 }
 
 function moneySigned(n) {
+  if (hideAmounts) return "•••• €";
   return (n >= 0 ? "+" : "−") + money(n);
 }
 
@@ -566,8 +570,25 @@ const LOCK_SESSION_KEY = "cahierBudget_unlocked";
 function unlockApp() {
   document.getElementById("lockScreen").style.display = "none";
   document.getElementById("appRoot").style.display = "";
+  applyHideAmountsUI();
   renderAll();
 }
+
+function applyHideAmountsUI() {
+  document.body.classList.toggle("hide-amounts", hideAmounts);
+  document.getElementById("hideAmountsLabel").textContent = hideAmounts ? "Afficher les sommes" : "Masquer les sommes";
+  document.getElementById("toggleHideAmounts").classList.toggle("active", hideAmounts);
+}
+
+document.getElementById("toggleHideAmounts").addEventListener("click", () => {
+  hideAmounts = !hideAmounts;
+  sessionStorage.setItem("paeonia_hideAmounts", hideAmounts ? "1" : "0");
+  applyHideAmountsUI();
+  renderAll();
+  renderProjects();
+  renderYearlyComparison();
+  renderMonthlyPivot();
+});
 
 if (sessionStorage.getItem(LOCK_SESSION_KEY) === "1") {
   unlockApp();
