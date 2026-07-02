@@ -199,10 +199,14 @@ body {
   transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
 .sidebar-toggle:hover { background: var(--sage-tint); color: var(--ink); }
+.sidebar-toggle:focus, .sidebar-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sage);
+}
 .sidebar-toggle.active {
-  background: var(--peony-tint);
-  border-color: var(--peony);
-  color: var(--ink);
+  background: var(--sage-dim);
+  border-color: var(--sage-dim);
+  color: #fff;
 }
 
 /* Mode "sommes masquées" : on floute les champs pré-remplis avec de vrais montants */
@@ -246,9 +250,18 @@ body.hide-amounts input[data-saved-for]:focus {
 .month-nav {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   font-size: 13.5px;
   color: var(--ink-soft);
+}
+#monthDisplay {
+  min-width: 200px;
+  text-align: center;
+  text-transform: capitalize;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
 }
 .month-nav button {
   background: #fff;
@@ -261,12 +274,6 @@ body.hide-amounts input[data-saved-for]:focus {
   color: var(--sage-dim);
 }
 .month-nav button:hover { background: var(--sage-tint); }
-#monthDisplay {
-  min-width: 160px;
-  text-align: center;
-  text-transform: capitalize;
-  font-weight: 500;
-}
 
 /* ---------- Panels ---------- */
 .tab-panel { display: none; padding-top: 22px; }
@@ -296,8 +303,12 @@ body.hide-amounts input[data-saved-for]:focus {
   padding: 18px 20px;
   box-shadow: var(--shadow);
 }
-.kpi-accent { background: var(--sage); border-color: var(--sage); }
+.kpi-accent { background: var(--sage-dim); border-color: var(--sage-dim); }
 .kpi-accent .kpi-label, .kpi-accent .kpi-value { color: #fff; }
+.kpi-sage { background: var(--sage); border-color: var(--sage); }
+.kpi-sage .kpi-label, .kpi-sage .kpi-value { color: var(--btn-green-text); }
+.kpi-peony { background: var(--peony); border-color: var(--peony); }
+.kpi-peony .kpi-label, .kpi-peony .kpi-value { color: var(--ink); }
 .kpi-label {
   display: block;
   font-size: 11.5px;
@@ -312,6 +323,49 @@ body.hide-amounts input[data-saved-for]:focus {
   font-weight: 700;
   transition: opacity .2s ease;
 }
+
+/* ---------- Répartition dashboard : jauges + camembert ---------- */
+.dashboard-split {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.dashboard-gauges-col { flex: 1 1 460px; min-width: 0; }
+.chart-card {
+  flex: 0 0 280px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.chart-card .section-title { margin-top: 0; align-self: flex-start; }
+.chart-card canvas { max-width: 200px; max-height: 200px; }
+.pie-legend {
+  width: 100%;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pie-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.pie-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pie-legend-name { flex: 1; color: var(--ink); }
+.pie-legend-pct { color: var(--ink-soft); font-weight: 600; }
 
 /* ---------- Gauges (élément signature) ---------- */
 .gauges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 780px; }
@@ -597,4 +651,5 @@ input:focus, select:focus {
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
   .field-row { flex-direction: column; }
   .sidebar-title h1 { font-size: 17px; }
+  .chart-card { flex-basis: 100%; }
 }

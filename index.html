@@ -72,7 +72,6 @@
   <div class="main-col">
 
     <header class="topbar">
-      <p class="topbar-sub" id="monthLabel">—</p>
       <div class="month-nav">
         <button id="prevMonth" aria-label="Mois précédent">←</button>
         <span id="monthDisplay">—</span>
@@ -86,11 +85,11 @@
       <section class="tab-panel active" id="panel-dashboard">
 
         <div class="kpi-row">
-          <div class="kpi">
+          <div class="kpi kpi-sage">
             <span class="kpi-label">Revenus du mois</span>
             <span class="kpi-value" id="kpiIncome">0 €</span>
           </div>
-          <div class="kpi">
+          <div class="kpi kpi-peony">
             <span class="kpi-label">Dépenses du mois</span>
             <span class="kpi-value" id="kpiExpense">0 €</span>
           </div>
@@ -98,14 +97,23 @@
             <span class="kpi-label">Reste à vivre</span>
             <span class="kpi-value" id="kpiRemaining">0 €</span>
           </div>
-          <div class="kpi">
+          <div class="kpi kpi-peony">
             <span class="kpi-label">Épargné ce mois</span>
             <span class="kpi-value" id="kpiSaved">0 €</span>
           </div>
         </div>
 
-        <h2 class="section-title">Suivi des dépenses</h2>
-        <div class="gauges" id="gaugesContainer"></div>
+        <div class="dashboard-split">
+          <div class="dashboard-gauges-col">
+            <h2 class="section-title">Suivi des dépenses</h2>
+            <div class="gauges" id="gaugesContainer"></div>
+          </div>
+          <div class="chart-card">
+            <h2 class="section-title">Répartition des dépenses</h2>
+            <canvas id="expensePie" width="220" height="220"></canvas>
+            <div class="pie-legend" id="pieLegend"></div>
+          </div>
+        </div>
 
         <h2 class="section-title">Dernières opérations</h2>
         <div class="mini-list" id="recentList"></div>
@@ -260,6 +268,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -101,6 +101,22 @@ function sortedCategories() {
   });
 }
 
+const CATEGORY_EMOJI = {
+  salaire: "💼", primes: "🎁", remboursements: "💸",
+  charges: "🏠", courses: "🛒", restaurants: "🍽️",
+  plaisirs: "🎉", vacances: "✈️", vetements: "👗",
+  sante: "💊", voiture: "🚗", owen: "🐾",
+  cadeaux: "🎀", amenagement: "🛋️", epargne: "🌱", epargne_tf: "🏛️",
+};
+function catEmoji(id) {
+  return CATEGORY_EMOJI[id] || "🔸";
+}
+function catLabel(cat) {
+  return `${catEmoji(cat.id)} ${cat.name}`;
+}
+
+const PIE_COLORS = ["#8EA58B", "#E7C8CF", "#F3C78A", "#D97A6C", "#A9C4A5", "#C9A0AE", "#B9A38C", "#7C9B8E", "#E3B7A0", "#9FB4C7", "#CBB994", "#8B9DC3"];
+
 /* ---------------- Navigation entre onglets ---------------- */
 document.getElementById("tabs").addEventListener("click", (e) => {
   const btn = e.target.closest(".tab");
@@ -129,7 +145,6 @@ document.getElementById("nextMonth").addEventListener("click", () => {
 function renderAll() {
   const label = currentMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   document.getElementById("monthDisplay").textContent = label;
-  document.getElementById("monthLabel").textContent = "Suivi de " + label;
   renderDashboard();
   renderCategorySelect();
   renderCategoryList();
@@ -183,7 +198,7 @@ function renderDashboard() {
       row.className = "gauge-row";
       row.innerHTML = `
         <div class="gauge-top">
-          <span class="gauge-name">${cat.name}</span>
+          <span class="gauge-name">${catLabel(cat)}</span>
           <span class="gauge-figures">${money(spent)} / ${money(cat.budget)}</span>
         </div>
         <div class="gauge-track">
@@ -195,6 +210,8 @@ function renderDashboard() {
       container.appendChild(row);
     });
   }
+
+  renderExpensePie(netByCat);
 
   // Dernières opérations
   const recentList = document.getElementById("recentList");
@@ -208,14 +225,59 @@ function renderDashboard() {
       const item = document.createElement("div");
       item.className = "mini-item";
       item.innerHTML = `
-        <span><span class="cat-tag">${cat ? cat.name : "?"}</span>${t.note || ""}</span>
+        <span><span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>${t.note || ""}</span>
         <span class="amt ${t.amount >= 0 ? "income" : ""}">${moneySigned(t.amount)}</span>`;
       recentList.appendChild(item);
     });
   }
 }
 
-/* ---------------- Formulaire d'ajout ---------------- */
+let expenseChart = null;
+
+function renderExpensePie(netByCat) {
+  const rows = sortedCategories()
+    .filter(c => c.type === "expense")
+    .map(c => ({ cat: c, spent: Math.max(0, -(netByCat[c.id] || 0)) }))
+    .filter(r => r.spent > 0)
+    .sort((a, b) => b.spent - a.spent);
+
+  const canvas = document.getElementById("expensePie");
+  const legend = document.getElementById("pieLegend");
+
+  if (rows.length === 0) {
+    if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    legend.innerHTML = `<p class="empty-state">Pas encore de dépenses ce mois-ci.</p>`;
+    return;
+  }
+
+  const total = rows.reduce((s, r) => s + r.spent, 0);
+  const labels = rows.map(r => catLabel(r.cat));
+  const data = rows.map(r => r.spent);
+  const colors = rows.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]);
+
+  if (expenseChart) expenseChart.destroy();
+  expenseChart = new Chart(canvas.getContext("2d"), {
+    type: "doughnut",
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: "#fff", borderWidth: 2 }] },
+    options: {
+      cutout: "62%",
+      plugins: { legend: { display: false }, tooltip: { enabled: !hideAmounts } },
+      animation: { duration: 500 },
+    },
+  });
+
+  legend.innerHTML = rows.map((r, i) => {
+    const pct = Math.round((r.spent / total) * 100);
+    return `
+      <div class="pie-legend-row">
+        <span class="pie-legend-dot" style="background:${colors[i]}"></span>
+        <span class="pie-legend-name">${catLabel(r.cat)}</span>
+        <span class="pie-legend-pct">${pct}%</span>
+      </div>`;
+  }).join("");
+}
 const txForm = document.getElementById("txForm");
 document.getElementById("txDate").valueAsDate = new Date();
 
