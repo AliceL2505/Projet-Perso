@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Cahier de Budget</title>
+<title>Mon Budget</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
 <div id="lockScreen" class="lock-screen">
   <form id="lockForm" class="lock-card">
     <span class="lock-icon">🔒</span>
-    <h1>Mon Cahier de Budget</h1>
+    <h1>Mon Budget</h1>
     <p>Entrez le mot de passe pour continuer.</p>
     <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="off" required autofocus>
     <button type="submit" class="btn-primary">Déverrouiller</button>
@@ -19,151 +19,184 @@
   </form>
 </div>
 
-<div class="app" id="appRoot" style="display:none;">
+<div class="layout" id="appRoot" style="display:none;">
 
-  <!-- En-tête -->
-  <header class="topbar">
-    <div class="topbar-title">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="tabs">
+    <div class="sidebar-title">
       <span class="topbar-mark">✒︎</span>
-      <div>
-        <h1>Mon Cahier de Budget</h1>
-        <p class="topbar-sub" id="monthLabel">—</p>
-      </div>
+      <h1>Mon Budget</h1>
     </div>
-    <nav class="tabs" id="tabs">
-      <button class="tab active" data-tab="dashboard">Tableau de bord</button>
-      <button class="tab" data-tab="add">Ajouter</button>
-      <button class="tab" data-tab="categories">Catégories</button>
-      <button class="tab" data-tab="history">Historique</button>
-    </nav>
-  </header>
+    <button class="tab active" data-tab="dashboard">Tableau de bord</button>
+    <button class="tab" data-tab="add">Ajouter</button>
+    <button class="tab" data-tab="categories">Catégories</button>
+    <button class="tab" data-tab="history">Historique</button>
+    <div class="sidebar-divider"></div>
+    <p class="sidebar-group-label">Repères Excel</p>
+    <button class="tab" data-tab="yearly">Comparatif annuel</button>
+    <button class="tab" data-tab="monthly">Résumé mensuel</button>
+    <div class="sidebar-spacer"></div>
+    <p class="sidebar-footnote">Vos données restent sur cet appareil.</p>
+  </nav>
 
-  <main>
+  <div class="main-col">
 
-    <!-- Sélecteur de mois -->
-    <div class="month-nav">
-      <button id="prevMonth" aria-label="Mois précédent">←</button>
-      <span id="monthDisplay">—</span>
-      <button id="nextMonth" aria-label="Mois suivant">→</button>
-    </div>
-
-    <!-- TABLEAU DE BORD -->
-    <section class="tab-panel active" id="panel-dashboard">
-
-      <div class="kpi-row">
-        <div class="kpi">
-          <span class="kpi-label">Revenus du mois</span>
-          <span class="kpi-value" id="kpiIncome">0 €</span>
-        </div>
-        <div class="kpi">
-          <span class="kpi-label">Dépenses du mois</span>
-          <span class="kpi-value" id="kpiExpense">0 €</span>
-        </div>
-        <div class="kpi kpi-accent">
-          <span class="kpi-label">Reste à vivre</span>
-          <span class="kpi-value" id="kpiRemaining">0 €</span>
-        </div>
-        <div class="kpi">
-          <span class="kpi-label">Épargné ce mois</span>
-          <span class="kpi-value" id="kpiSaved">0 €</span>
-        </div>
+    <header class="topbar">
+      <p class="topbar-sub" id="monthLabel">—</p>
+      <div class="month-nav">
+        <button id="prevMonth" aria-label="Mois précédent">←</button>
+        <span id="monthDisplay">—</span>
+        <button id="nextMonth" aria-label="Mois suivant">→</button>
       </div>
+    </header>
 
-      <h2 class="section-title">Suivi par catégorie</h2>
-      <div class="gauges" id="gaugesContainer"></div>
+    <main>
 
-      <h2 class="section-title">Dernières opérations</h2>
-      <div class="mini-list" id="recentList"></div>
+      <!-- TABLEAU DE BORD -->
+      <section class="tab-panel active" id="panel-dashboard">
 
-    </section>
-
-    <!-- AJOUTER -->
-    <section class="tab-panel" id="panel-add">
-      <form id="txForm" class="form-card">
-        <h2 class="section-title">Nouvelle opération</h2>
-
-        <div class="field-row">
-          <label>Date
-            <input type="date" id="txDate" required>
-          </label>
-          <label>Montant (€)
-            <input type="number" id="txAmount" step="0.01" min="0" placeholder="0,00" required>
-          </label>
+        <div class="kpi-row">
+          <div class="kpi">
+            <span class="kpi-label">Revenus du mois</span>
+            <span class="kpi-value" id="kpiIncome">0 €</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">Dépenses du mois</span>
+            <span class="kpi-value" id="kpiExpense">0 €</span>
+          </div>
+          <div class="kpi kpi-accent">
+            <span class="kpi-label">Reste à vivre</span>
+            <span class="kpi-value" id="kpiRemaining">0 €</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-label">Épargné ce mois</span>
+            <span class="kpi-value" id="kpiSaved">0 €</span>
+          </div>
         </div>
 
-        <label>Catégorie
-          <select id="txCategory" required></select>
-        </label>
+        <h2 class="section-title">Suivi des dépenses</h2>
+        <div class="gauges" id="gaugesContainer"></div>
 
-        <div class="radio-row" role="radiogroup" aria-label="Sens de l'opération">
-          <label class="radio-choice">
-            <input type="radio" name="txSign" value="expense" checked>
-            <span>Dépense (sort du compte)</span>
+        <h2 class="section-title">Dernières opérations</h2>
+        <div class="mini-list" id="recentList"></div>
+
+      </section>
+
+      <!-- AJOUTER -->
+      <section class="tab-panel" id="panel-add">
+        <form id="txForm" class="form-card">
+          <h2 class="section-title">Nouvelle opération</h2>
+
+          <div class="field-row">
+            <label>Date
+              <input type="date" id="txDate" required>
+            </label>
+            <label>Montant (€)
+              <input type="number" id="txAmount" step="0.01" min="0" placeholder="0,00" required>
+            </label>
+          </div>
+
+          <label>Catégorie
+            <select id="txCategory" required></select>
           </label>
-          <label class="radio-choice">
-            <input type="radio" name="txSign" value="income">
-            <span>Revenu / remboursement (rentre sur le compte)</span>
+
+          <div class="radio-row" role="radiogroup" aria-label="Sens de l'opération">
+            <label class="radio-choice">
+              <input type="radio" name="txSign" value="expense" checked>
+              <span>Dépense (sort du compte)</span>
+            </label>
+            <label class="radio-choice">
+              <input type="radio" name="txSign" value="income">
+              <span>Revenu / remboursement (rentre sur le compte)</span>
+            </label>
+          </div>
+
+          <label>Note (optionnel)
+            <input type="text" id="txNote" placeholder="Ex : Déjeuner avec Owen">
           </label>
+
+          <button type="submit" class="btn-primary">Enregistrer l'opération</button>
+          <p class="form-feedback" id="txFeedback"></p>
+        </form>
+      </section>
+
+      <!-- CATÉGORIES -->
+      <section class="tab-panel" id="panel-categories">
+        <h2 class="section-title">Vos catégories</h2>
+        <p class="hint">Ajustez le budget mensuel de chaque catégorie. Ces montants servent de référence pour le tableau de bord.</p>
+        <div class="category-list" id="categoryList"></div>
+
+        <h2 class="section-title">Ajouter une catégorie</h2>
+        <form id="catForm" class="form-card">
+          <div class="field-row">
+            <label>Nom
+              <input type="text" id="catName" placeholder="Ex : Cadeaux" required>
+            </label>
+            <label>Type
+              <select id="catType">
+                <option value="expense">Dépense</option>
+                <option value="income">Revenu</option>
+              </select>
+            </label>
+            <label>Budget mensuel (€)
+              <input type="number" id="catBudget" min="0" step="1" placeholder="0">
+            </label>
+          </div>
+          <button type="submit" class="btn-secondary">Ajouter la catégorie</button>
+        </form>
+      </section>
+
+      <!-- HISTORIQUE -->
+      <section class="tab-panel" id="panel-history">
+        <div class="history-header">
+          <h2 class="section-title">Historique du mois</h2>
+          <select id="historyFilter">
+            <option value="all">Toutes les catégories</option>
+          </select>
         </div>
+        <table class="history-table">
+          <thead>
+            <tr><th>Date</th><th>Catégorie</th><th>Note</th><th class="num">Montant</th><th></th></tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <p class="empty-state" id="historyEmpty" style="display:none;">Aucune opération ce mois-ci. Ajoutez-en une depuis l'onglet « Ajouter ».</p>
+      </section>
 
-        <label>Note (optionnel)
-          <input type="text" id="txNote" placeholder="Ex : Déjeuner avec Owen">
-        </label>
-
-        <button type="submit" class="btn-primary">Enregistrer l'opération</button>
-        <p class="form-feedback" id="txFeedback"></p>
-      </form>
-    </section>
-
-    <!-- CATÉGORIES -->
-    <section class="tab-panel" id="panel-categories">
-      <h2 class="section-title">Vos catégories</h2>
-      <p class="hint">Ajustez le budget mensuel de chaque catégorie. Ces montants servent de référence pour le tableau de bord.</p>
-      <div class="category-list" id="categoryList"></div>
-
-      <h2 class="section-title">Ajouter une catégorie</h2>
-      <form id="catForm" class="form-card">
-        <div class="field-row">
-          <label>Nom
-            <input type="text" id="catName" placeholder="Ex : Cadeaux" required>
-          </label>
-          <label>Type
-            <select id="catType">
-              <option value="expense">Dépense</option>
-              <option value="income">Revenu</option>
-            </select>
-          </label>
-          <label>Budget mensuel (€)
-            <input type="number" id="catBudget" min="0" step="1" placeholder="0">
-          </label>
+      <!-- COMPARATIF ANNUEL -->
+      <section class="tab-panel" id="panel-yearly">
+        <h2 class="section-title">Comparatif annuel par catégorie</h2>
+        <p class="hint">Moyenne mensuelle dépensée par catégorie, année par année — comme ton onglet 📊.</p>
+        <div class="table-scroll">
+          <table class="history-table" id="yearlyTable">
+            <thead><tr id="yearlyHead"></tr></thead>
+            <tbody id="yearlyBody"></tbody>
+          </table>
         </div>
-        <button type="submit" class="btn-secondary">Ajouter la catégorie</button>
-      </form>
-    </section>
+      </section>
 
-    <!-- HISTORIQUE -->
-    <section class="tab-panel" id="panel-history">
-      <div class="history-header">
-        <h2 class="section-title">Historique du mois</h2>
-        <select id="historyFilter">
-          <option value="all">Toutes les catégories</option>
-        </select>
-      </div>
-      <table class="history-table">
-        <thead>
-          <tr><th>Date</th><th>Catégorie</th><th>Note</th><th class="num">Montant</th><th></th></tr>
-        </thead>
-        <tbody id="historyBody"></tbody>
-      </table>
-      <p class="empty-state" id="historyEmpty" style="display:none;">Aucune opération ce mois-ci. Ajoutez-en une depuis l'onglet « Ajouter ».</p>
-    </section>
+      <!-- RÉSUMÉ MENSUEL -->
+      <section class="tab-panel" id="panel-monthly">
+        <div class="history-header">
+          <h2 class="section-title">Résumé mensuel par catégorie</h2>
+          <select id="monthlyYearFilter"></select>
+        </div>
+        <p class="hint">Total par catégorie et par mois — comme ton onglet « Synthèse par mois ».</p>
+        <div class="table-scroll">
+          <table class="history-table" id="monthlyTable">
+            <thead><tr id="monthlyHead"></tr></thead>
+            <tbody id="monthlyBody"></tbody>
+          </table>
+        </div>
+      </section>
 
-  </main>
+    </main>
 
-  <footer class="app-footer">
-    <p>Vos données restent sur cet appareil (aucun serveur, aucun compte).</p>
-  </footer>
+    <footer class="app-footer">
+      <p>Vos données restent sur cet appareil (aucun serveur, aucun compte).</p>
+    </footer>
 
+  </div>
 </div>
 
 <script src="app.js"></script>

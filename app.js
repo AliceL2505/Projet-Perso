@@ -78,6 +78,8 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   btn.classList.add("active");
   document.getElementById(`panel-${btn.dataset.tab}`).classList.add("active");
   if (btn.dataset.tab === "history") renderHistory();
+  if (btn.dataset.tab === "yearly") renderYearlyComparison();
+  if (btn.dataset.tab === "monthly") renderMonthlyPivot();
 });
 
 /* ---------------- Navigation entre mois ---------------- */
@@ -339,6 +341,98 @@ document.getElementById("historyBody").addEventListener("click", (e) => {
   renderHistory();
   renderDashboard();
 });
+
+/* ---------------- Comparatif annuel (repère Excel) ---------------- */
+function monthsWithDataInYear(year) {
+  const set = new Set();
+  state.transactions.forEach(t => { if (t.date.startsWith(year + "-")) set.add(t.date.slice(0, 7)); });
+  return set.size || 1;
+}
+
+function renderYearlyComparison() {
+  const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
+  const head = document.getElementById("yearlyHead");
+  head.innerHTML = `<th class="sticky-col">Catégorie</th>` +
+    years.map(y => `<th class="num">${y} (moy./mois)</th>`).join("") +
+    years.slice(1).map((y, i) => `<th class="num">Écart ${years[i]}→${y}</th>`).join("");
+
+  const body = document.getElementById("yearlyBody");
+  body.innerHTML = "";
+
+  if (years.length === 0) {
+    body.innerHTML = `<tr><td class="sticky-col">Aucune donnée pour l'instant.</td></tr>`;
+    return;
+  }
+
+  state.categories.forEach(cat => {
+    const avgs = years.map(y => {
+      const total = state.transactions
+        .filter(t => t.categoryId === cat.id && t.date.startsWith(y + "-"))
+        .reduce((s, t) => s + t.amount, 0);
+      return total / monthsWithDataInYear(y);
+    });
+    if (avgs.every(v => v === 0)) return;
+
+    let row = `<td class="sticky-col">${cat.name}</td>`;
+    avgs.forEach(v => {
+      row += `<td class="num ${v < 0 ? "neg" : v > 0 ? "pos" : ""}">${v === 0 ? "—" : moneySigned(v)}</td>`;
+    });
+    for (let i = 1; i < avgs.length; i++) {
+      const diff = avgs[i] - avgs[i - 1];
+      row += `<td class="num ${diff < 0 ? "neg" : diff > 0 ? "pos" : ""}">${diff === 0 ? "—" : moneySigned(diff)}</td>`;
+    }
+    const tr = document.createElement("tr");
+    tr.innerHTML = row;
+    body.appendChild(tr);
+  });
+}
+
+/* ---------------- Résumé mensuel (repère Excel) ---------------- */
+const MONTH_SHORT = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+
+function renderMonthlyPivot() {
+  const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
+  const yearSelect = document.getElementById("monthlyYearFilter");
+  const prevYear = yearSelect.value;
+  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
+  if (years.includes(prevYear)) yearSelect.value = prevYear;
+  else if (years.length) yearSelect.value = years[years.length - 1];
+
+  const year = yearSelect.value;
+  const head = document.getElementById("monthlyHead");
+  head.innerHTML = `<th class="sticky-col">Catégorie</th>` +
+    MONTH_SHORT.map(m => `<th class="num">${m}</th>`).join("") + `<th class="num">Total</th>`;
+
+  const body = document.getElementById("monthlyBody");
+  body.innerHTML = "";
+
+  if (!year) {
+    body.innerHTML = `<tr><td class="sticky-col">Aucune donnée pour l'instant.</td></tr>`;
+    return;
+  }
+
+  state.categories.forEach(cat => {
+    const monthTotals = Array(12).fill(0);
+    state.transactions.forEach(t => {
+      if (t.categoryId === cat.id && t.date.startsWith(year + "-")) {
+        monthTotals[parseInt(t.date.slice(5, 7), 10) - 1] += t.amount;
+      }
+    });
+    const total = monthTotals.reduce((a, b) => a + b, 0);
+    if (total === 0 && monthTotals.every(v => v === 0)) return;
+
+    let row = `<td class="sticky-col">${cat.name}</td>`;
+    monthTotals.forEach(v => {
+      row += `<td class="num ${v < 0 ? "neg" : v > 0 ? "pos" : ""}">${v === 0 ? "—" : moneySigned(v)}</td>`;
+    });
+    row += `<td class="num ${total < 0 ? "neg" : total > 0 ? "pos" : ""}">${moneySigned(total)}</td>`;
+    const tr = document.createElement("tr");
+    tr.innerHTML = row;
+    body.appendChild(tr);
+  });
+}
+
+document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
 
 /* ---------------- Démarrage protégé par mot de passe ---------------- */
 const LOCK_PASSWORD = "owen";
