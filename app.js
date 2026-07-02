@@ -69,6 +69,14 @@ function catById(id) {
   return state.categories.find(c => c.id === id);
 }
 
+function sortedCategories() {
+  return [...state.categories].sort((a, b) => {
+    if (a.id === "salaire") return -1;
+    if (b.id === "salaire") return 1;
+    return a.name.localeCompare(b.name, "fr");
+  });
+}
+
 /* ---------------- Navigation entre onglets ---------------- */
 document.getElementById("tabs").addEventListener("click", (e) => {
   const btn = e.target.closest(".tab");
@@ -132,7 +140,7 @@ function renderDashboard() {
   // Jauges par catégorie de dépense ayant un budget défini
   const container = document.getElementById("gaugesContainer");
   container.innerHTML = "";
-  const expenseCats = state.categories.filter(c => c.type === "expense");
+  const expenseCats = sortedCategories().filter(c => c.type === "expense");
 
   if (expenseCats.every(c => !c.budget)) {
     container.innerHTML = `<p class="empty-state">Définissez des budgets dans l'onglet « Catégories » pour voir apparaître vos jauges ici.</p>`;
@@ -190,7 +198,7 @@ function renderCategorySelect() {
   const select = document.getElementById("txCategory");
   const prevValue = select.value;
   select.innerHTML = "";
-  state.categories.forEach(cat => {
+  sortedCategories().forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat.id;
     opt.textContent = `${cat.name} (${cat.type === "income" ? "Revenu" : "Dépense"})`;
@@ -240,7 +248,7 @@ txForm.addEventListener("submit", (e) => {
 function renderCategoryList() {
   const list = document.getElementById("categoryList");
   list.innerHTML = "";
-  state.categories.forEach(cat => {
+  sortedCategories().forEach(cat => {
     const row = document.createElement("div");
     row.className = "category-item";
     row.innerHTML = `
@@ -295,7 +303,7 @@ function renderHistoryFilterOptions() {
   const filter = document.getElementById("historyFilter");
   const prev = filter.value;
   filter.innerHTML = `<option value="all">Toutes les catégories</option>`;
-  state.categories.forEach(cat => {
+  sortedCategories().forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat.id;
     opt.textContent = cat.name;
@@ -364,7 +372,7 @@ function renderYearlyComparison() {
     return;
   }
 
-  state.categories.forEach(cat => {
+  sortedCategories().forEach(cat => {
     const avgs = years.map(y => {
       const total = state.transactions
         .filter(t => t.categoryId === cat.id && t.date.startsWith(y + "-"))
@@ -411,7 +419,7 @@ function renderMonthlyPivot() {
     return;
   }
 
-  state.categories.forEach(cat => {
+  sortedCategories().forEach(cat => {
     const monthTotals = Array(12).fill(0);
     state.transactions.forEach(t => {
       if (t.categoryId === cat.id && t.date.startsWith(year + "-")) {
