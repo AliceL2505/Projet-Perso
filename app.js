@@ -381,14 +381,24 @@ txForm.addEventListener("submit", (e) => {
 });
 
 /* ---------------- Catégories ---------------- */
+function categoriesForManagementList() {
+  const income = state.categories
+    .filter(c => c.type === "income")
+    .sort((a, b) => (a.id === "salaire" ? -1 : b.id === "salaire" ? 1 : a.name.localeCompare(b.name, "fr")));
+  const expense = state.categories
+    .filter(c => c.type === "expense")
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  return [...income, ...expense];
+}
+
 function renderCategoryList() {
   const list = document.getElementById("categoryList");
   list.innerHTML = "";
-  sortedCategories().forEach(cat => {
+  categoriesForManagementList().forEach(cat => {
     const row = document.createElement("div");
-    row.className = "category-item";
+    row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
     row.innerHTML = `
-      <span class="cname">${cat.name}</span>
+      <span class="cname">${catLabel(cat)}</span>
       <span class="ctype">${cat.type === "income" ? "Revenu" : "Dépense"}</span>
       ${cat.type === "expense" ? `<input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}">` : `<span></span>`}
       <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
@@ -442,10 +452,14 @@ function renderHistoryFilterOptions() {
   sortedCategories().forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat.id;
-    opt.textContent = cat.name;
+    opt.textContent = catLabel(cat);
     filter.appendChild(opt);
   });
   if (prev) filter.value = prev;
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function renderHistory() {
@@ -462,14 +476,13 @@ function renderHistory() {
   txs.forEach(t => {
     const tr = document.createElement("tr");
     if (t.amount >= 0) tr.className = "row-income";
-    const [y, m, d] = t.date.split("-");
     const catOptions = sortedCategories()
       .map(c => `<option value="${c.id}" ${c.id === t.categoryId ? "selected" : ""}>${catLabel(c)}</option>`)
       .join("");
     tr.innerHTML = `
-      <td>${d}/${m}/${y}</td>
-      <td><select class="inline-cat-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
-      <td>${t.note || ""}</td>
+      <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
+      <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
+      <td><input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
       <td class="num">${moneySigned(t.amount)}</td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
@@ -483,7 +496,13 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
   if (!txId) return;
   const t = state.transactions.find(tx => tx.id === txId);
   if (!t) return;
-  t.categoryId = e.target.value;
+  if (e.target.classList.contains("inline-cat-select")) {
+    t.categoryId = e.target.value;
+  } else if (e.target.classList.contains("inline-date-input")) {
+    if (e.target.value) t.date = e.target.value;
+  } else if (e.target.classList.contains("inline-note-input")) {
+    t.note = e.target.value.trim();
+  }
   saveState();
   renderHistory();
   renderDashboard();
