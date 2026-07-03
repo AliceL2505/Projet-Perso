@@ -122,7 +122,7 @@ function sortedCategories() {
 const CATEGORY_EMOJI = {
   salaire: "💼", primes: "🎁", remboursements: "💸",
   charges: "🏠", courses: "🛒", restaurants: "🍽️",
-  plaisirs: "🎉", vacances: "✈️", vetements: "👗",
+  plaisirs: "🎉", vacances: "🌴", vetements: "👗",
   sante: "💊", voiture: "🚗", owen: "🐾",
   cadeaux: "🎀", amenagement: "🛋️", epargne: "🌱", epargne_tf: "🏛️",
 };
@@ -140,6 +140,7 @@ const MONTH_SCOPED_TABS = ["dashboard", "history"];
 
 function updateTopbarVisibility(tabName) {
   document.querySelector(".topbar").style.display = MONTH_SCOPED_TABS.includes(tabName) ? "" : "none";
+  document.getElementById("greetingBanner").style.display = tabName === "dashboard" ? "" : "none";
 }
 
 document.getElementById("tabs").addEventListener("click", (e) => {
@@ -208,7 +209,7 @@ function renderDashboard() {
     .reduce((s, c) => s + c.budget, 0);
   const remainingBudget = totalBudget - expense;
   const greeting = document.getElementById("greetingText");
-  let msg = `Bonjour ${USER_NAME} !<br>`;
+  let msg = `<span class="greeting-name">Bonjour ${USER_NAME} !</span>`;
   if (saved > 0) {
     msg += `Tu as économisé ${money(saved)} ce mois-ci. `;
   } else if (expense > 0) {
@@ -459,13 +460,15 @@ function renderHistory() {
   document.getElementById("historyEmpty").style.display = txs.length ? "none" : "block";
 
   txs.forEach(t => {
-    const cat = catById(t.categoryId);
     const tr = document.createElement("tr");
     if (t.amount >= 0) tr.className = "row-income";
     const [y, m, d] = t.date.split("-");
+    const catOptions = sortedCategories()
+      .map(c => `<option value="${c.id}" ${c.id === t.categoryId ? "selected" : ""}>${catLabel(c)}</option>`)
+      .join("");
     tr.innerHTML = `
       <td>${d}/${m}/${y}</td>
-      <td>${cat ? cat.name : "Catégorie supprimée"}</td>
+      <td><select class="inline-cat-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
       <td>${t.note || ""}</td>
       <td class="num">${moneySigned(t.amount)}</td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
@@ -474,6 +477,17 @@ function renderHistory() {
 }
 
 document.getElementById("historyFilter").addEventListener("change", renderHistory);
+
+document.getElementById("historyBody").addEventListener("change", (e) => {
+  const txId = e.target.dataset.txId;
+  if (!txId) return;
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  t.categoryId = e.target.value;
+  saveState();
+  renderHistory();
+  renderDashboard();
+});
 
 document.getElementById("historyBody").addEventListener("click", (e) => {
   const id = e.target.dataset.deleteTx;

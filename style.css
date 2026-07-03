@@ -318,15 +318,23 @@ body.hide-amounts input[data-saved-for]:focus {
 
 /* ---------- KPIs ---------- */
 .greeting-banner {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 .greeting-banner p {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 400;
+  color: var(--ink-soft);
   line-height: 1.5;
+}
+.greeting-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
 }
 .kpi-row {
   display: grid;
@@ -603,7 +611,8 @@ input:focus, select:focus {
 .import-dropzone button { opacity: 0.6; cursor: not-allowed; }
 
 /* ---------- Catégories ---------- */
-.category-list { display: flex; flex-direction: column; gap: 8px; }
+.category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 900px; }
+@media (max-width: 640px) { .category-list { grid-template-columns: 1fr; } }
 .category-item {
   display: flex;
   align-items: center;
@@ -668,6 +677,20 @@ input:focus, select:focus {
 .history-table .num { text-align: right; }
 .history-table th.num { text-align: right; }
 .row-income td.num { color: var(--success); }
+.inline-cat-select {
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  font-size: 13.5px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+  max-width: 180px;
+}
+.inline-cat-select:hover { background: var(--sage-tint); }
+.inline-cat-select:focus { outline: 2px solid var(--sage); background: #fff; }
 
 /* ---------- Pied de page ---------- */
 .app-footer {
