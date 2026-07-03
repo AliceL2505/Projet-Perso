@@ -749,6 +749,23 @@ function renderMonthlyPivot() {
 
 document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
 
+/* ---------------- Barre latérale rétractable ---------------- */
+let sidebarCollapsed = localStorage.getItem("paeonia_sidebarCollapsed") === "1";
+
+function applySidebarState() {
+  document.getElementById("tabs").classList.toggle("collapsed", sidebarCollapsed);
+  document.getElementById("sidebarCollapseBtn").setAttribute(
+    "aria-label",
+    sidebarCollapsed ? "Déplier la barre latérale" : "Réduire la barre latérale"
+  );
+}
+
+document.getElementById("sidebarCollapseBtn").addEventListener("click", () => {
+  sidebarCollapsed = !sidebarCollapsed;
+  localStorage.setItem("paeonia_sidebarCollapsed", sidebarCollapsed ? "1" : "0");
+  applySidebarState();
+});
+
 /* ---------------- Démarrage protégé par mot de passe ---------------- */
 const LOCK_PASSWORD = "owen";
 const LOCK_SESSION_KEY = "cahierBudget_unlocked";
@@ -757,6 +774,7 @@ function unlockApp() {
   document.getElementById("lockScreen").style.display = "none";
   document.getElementById("appRoot").style.display = "";
   applyHideAmountsUI();
+  applySidebarState();
   updateTopbarVisibility("dashboard");
   renderAll();
 }
