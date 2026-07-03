@@ -269,8 +269,13 @@ body.hide-amounts input[data-saved-for]:focus {
   border-radius: 999px;
   width: 32px;
   height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   font-size: 14px;
+  line-height: 1;
   color: var(--sage-dim);
 }
 .month-nav button:hover { background: var(--sage-tint); }
@@ -345,6 +350,8 @@ body.hide-amounts input[data-saved-for]:focus {
 }
 .chart-card .section-title { margin-top: 0; align-self: flex-start; }
 .chart-card canvas { max-width: 200px; max-height: 200px; }
+.savings-chart-card { flex: none; width: 100%; max-width: 780px; align-items: stretch; margin-bottom: 12px; }
+.savings-chart-card canvas { max-width: 100%; max-height: 320px; width: 100% !important; height: 260px !important; }
 .pie-legend {
   width: 100%;
   margin-top: 14px;

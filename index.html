@@ -58,6 +58,7 @@
     <p class="sidebar-group-label">Repères Excel</p>
     <button class="tab" data-tab="yearly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><rect x="7" y="12" width="2.6" height="8"/><rect x="12.7" y="7" width="2.6" height="13"/><rect x="18.4" y="15" width="2.6" height="5"/></svg>Comparatif annuel</button>
     <button class="tab" data-tab="monthly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3.5 10h17"/></svg>Résumé mensuel</button>
+    <button class="tab" data-tab="savings"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg>Suivi épargne</button>
     <div class="sidebar-spacer"></div>
     <button type="button" id="toggleHideAmounts" class="sidebar-toggle">
       <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -257,6 +258,43 @@
             <tbody id="monthlyBody"></tbody>
           </table>
         </div>
+      </section>
+
+      <!-- SUIVI ÉPARGNE -->
+      <section class="tab-panel" id="panel-savings">
+        <h2 class="section-title">Suivi épargne</h2>
+        <p class="hint">Photographie de ton épargne globale au 1er de chaque mois — comme ton tableau LA / VIE / DOCA.</p>
+
+        <div class="chart-card savings-chart-card">
+          <canvas id="savingsChart" height="220"></canvas>
+        </div>
+
+        <div class="table-scroll">
+          <table class="history-table" id="savingsTable">
+            <thead><tr><th>Date</th><th class="num">LA</th><th class="num">VIE</th><th class="num">DOCA</th><th class="num">Total</th><th></th></tr></thead>
+            <tbody id="savingsBody"></tbody>
+          </table>
+        </div>
+
+        <h2 class="section-title">Ajouter / mettre à jour un mois</h2>
+        <form id="savingsForm" class="form-card">
+          <label>Mois
+            <input type="month" id="savDate" required>
+          </label>
+          <div class="field-row">
+            <label>LA — Livret A (€)
+              <input type="number" id="savLA" step="1" placeholder="0">
+            </label>
+            <label>VIE — Assurance Vie (€)
+              <input type="number" id="savVIE" step="1" placeholder="0">
+            </label>
+            <label>DOCA — Épargne salariale (€)
+              <input type="number" id="savDOCA" step="1" placeholder="0">
+            </label>
+          </div>
+          <button type="submit" class="btn-secondary">Enregistrer ce mois</button>
+          <p class="hint" style="margin:0;">Si le mois existe déjà, il sera mis à jour plutôt que dupliqué.</p>
+        </form>
       </section>
 
     </main>
