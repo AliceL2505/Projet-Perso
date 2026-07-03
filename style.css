@@ -64,13 +64,13 @@ body {
 .layout {
   display: flex;
   align-items: flex-start;
-  max-width: 1140px;
+  max-width: 1680px;
   margin: 0 auto;
 }
 .main-col {
   flex: 1;
   min-width: 0;
-  padding: 40px 36px 70px;
+  padding: 40px 48px 70px;
 }
 
 /* ---------- Logo Paeonia (icône pivoine géométrique) ---------- */
@@ -287,21 +287,19 @@ body.hide-amounts input[data-saved-for]:focus {
   color: var(--ink);
 }
 .month-nav button {
-  background: #fff;
-  border: 1.5px solid var(--sage);
-  border-radius: 999px;
-  width: 32px;
-  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--sage-dim);
+  color: var(--ink-soft);
 }
-.month-nav button:hover { background: var(--sage-tint); }
+.month-nav button:hover { background: var(--sage-tint); color: var(--ink); }
 
 /* ---------- Panels ---------- */
 .tab-panel { display: none; padding-top: 22px; }
@@ -319,6 +317,17 @@ body.hide-amounts input[data-saved-for]:focus {
 .hint { color: var(--ink-soft); font-size: 13px; margin: -8px 0 18px; }
 
 /* ---------- KPIs ---------- */
+.greeting-banner {
+  margin-bottom: 18px;
+}
+.greeting-banner p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.5;
+}
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -358,6 +367,7 @@ body.hide-amounts input[data-saved-for]:focus {
   align-items: flex-start;
   gap: 20px;
   flex-wrap: wrap;
+  margin-top: 28px;
 }
 .dashboard-gauges-col { flex: 1 1 460px; min-width: 0; }
 .chart-card {
@@ -375,6 +385,31 @@ body.hide-amounts input[data-saved-for]:focus {
 .chart-card canvas { max-width: 200px; max-height: 200px; }
 .savings-chart-card { flex: none; width: 100%; max-width: 780px; align-items: stretch; margin-bottom: 12px; }
 .savings-chart-card canvas { max-width: 100%; max-height: 320px; width: 100% !important; height: 260px !important; }
+.savings-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.savings-legend label {
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ink);
+  cursor: pointer;
+}
+.savings-legend input[type=checkbox] { width: auto; accent-color: var(--sage); }
+.savings-legend .legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
 .pie-legend {
   width: 100%;
   margin-top: 14px;
@@ -542,6 +577,31 @@ input:focus, select:focus {
 .btn-secondary:hover { background: var(--sage-tint); }
 .form-feedback { font-size: 13px; color: var(--success); min-height: 16px; margin:0; }
 
+.import-card { margin-top: 16px; }
+.import-card-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.badge-soon {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sage-dim);
+  background: var(--sage-tint);
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.import-dropzone {
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius-sm);
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.import-dropzone p { margin: 0; font-size: 13px; }
+.import-dropzone button { opacity: 0.6; cursor: not-allowed; }
+
 /* ---------- Catégories ---------- */
 .category-list { display: flex; flex-direction: column; gap: 8px; }
 .category-item {
@@ -649,6 +709,10 @@ input:focus, select:focus {
 .table-scroll { overflow-x: auto; }
 .history-table td.neg { color: var(--danger); }
 .history-table td.pos { color: var(--success); }
+.history-table td.muted-col, .history-table th.muted-col {
+  color: var(--ink-soft);
+  background: var(--paper);
+}
 .history-table th.sticky-col, .history-table td.sticky-col {
   position: sticky;
   left: 0;

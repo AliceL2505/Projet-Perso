@@ -5,6 +5,7 @@
    ========================================================= */
 
 const STORAGE_KEY = "cahierBudget_v1";
+const USER_NAME = "Alice";
 
 const DEFAULT_CATEGORIES = [
   { id: "salaire", name: "Salaire", type: "income", budget: 0 },
@@ -201,6 +202,28 @@ function renderDashboard() {
   animateKpi("kpiExpense", expense, money);
   animateKpi("kpiRemaining", income - expense, moneySigned);
   animateKpi("kpiSaved", saved, moneySigned);
+
+  const totalBudget = state.categories
+    .filter(c => c.type === "expense" && c.budget > 0)
+    .reduce((s, c) => s + c.budget, 0);
+  const remainingBudget = totalBudget - expense;
+  const greeting = document.getElementById("greetingText");
+  let msg = `Bonjour ${USER_NAME} !<br>`;
+  if (saved > 0) {
+    msg += `Tu as économisé ${money(saved)} ce mois-ci. `;
+  } else if (expense > 0) {
+    msg += `Pas encore d'épargne enregistrée ce mois-ci. `;
+  } else {
+    msg += `Le mois démarre tout juste. `;
+  }
+  if (totalBudget > 0) {
+    msg += remainingBudget >= 0
+      ? `Il te reste ${money(remainingBudget)} avant ton budget prévu. Continue comme ça !`
+      : `Tu as dépassé ton budget prévu de ${money(-remainingBudget)} ce mois-ci.`;
+  } else {
+    msg += `Continue comme ça !`;
+  }
+  greeting.innerHTML = msg;
 
   // Jauges par catégorie de dépense ayant un budget défini
   const container = document.getElementById("gaugesContainer");
@@ -562,6 +585,19 @@ projectForm.addEventListener("submit", (e) => {
 let savingsChart = null;
 const SAVINGS_MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
+function moneyRound(n) {
+  if (hideAmounts) return "•••• €";
+  return Math.round(n).toLocaleString("fr-FR") + " €";
+}
+
+const SAVINGS_SERIES = [
+  { key: "la", label: "Livret A", color: "#8EA58B" },
+  { key: "vie", label: "Assurance Vie", color: "#D9A6B3" },
+  { key: "doca", label: "Épargne salariale", color: "#F3C78A" },
+  { key: "total", label: "Total", color: "#2F3437" },
+];
+let savingsVisibility = { la: true, vie: true, doca: true, total: true };
+
 function renderSavings() {
   const sorted = [...state.savings].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -585,6 +621,36 @@ function renderSavings() {
     });
   }
 
+  // Évolution depuis janvier de l'année du dernier point connu
+  const ytdEl = document.getElementById("savingsYtdChange");
+  if (sorted.length > 0) {
+    const lastYear = sorted[sorted.length - 1].date.slice(0, 4);
+    const yearSnapshots = sorted.filter(s => s.date.startsWith(lastYear + "-"));
+    const first = yearSnapshots[0];
+    const last = yearSnapshots[yearSnapshots.length - 1];
+    const delta = (last.la + last.vie + last.doca) - (first.la + first.vie + first.doca);
+    ytdEl.textContent = moneySigned(delta);
+  } else {
+    ytdEl.textContent = "—";
+  }
+
+  // Versements Épargne + Épargne Taxe Foncière de l'année en cours, fléchés vers le Livret A
+  const laEl = document.getElementById("savingsToLA");
+  const currentYear = String(currentMonth.getFullYear());
+  const toLA = state.transactions
+    .filter(t => (t.categoryId === "epargne" || t.categoryId === "epargne_tf") && t.date.startsWith(currentYear + "-"))
+    .reduce((s, t) => s - t.amount, 0);
+  laEl.textContent = money(toLA);
+
+  // Légende à cases à cocher
+  const legend = document.getElementById("savingsLegend");
+  legend.innerHTML = SAVINGS_SERIES.map(s => `
+    <label>
+      <input type="checkbox" data-series="${s.key}" ${savingsVisibility[s.key] ? "checked" : ""}>
+      <span class="legend-swatch" style="background:${s.color}"></span>
+      ${s.label}
+    </label>`).join("");
+
   const canvas = document.getElementById("savingsChart");
   if (savingsChart) { savingsChart.destroy(); savingsChart = null; }
 
@@ -593,31 +659,55 @@ function renderSavings() {
       const [y, m] = s.date.split("-");
       return `${SAVINGS_MONTH_LABELS[parseInt(m, 10) - 1]} ${y.slice(2)}`;
     });
+    const dataByKey = {
+      la: sorted.map(s => s.la),
+      vie: sorted.map(s => s.vie),
+      doca: sorted.map(s => s.doca),
+      total: sorted.map(s => s.la + s.vie + s.doca),
+    };
     savingsChart = new Chart(canvas.getContext("2d"), {
       type: "line",
       data: {
         labels,
-        datasets: [
-          { label: "Livret A", data: sorted.map(s => s.la), borderColor: "#8EA58B", backgroundColor: "#8EA58B", tension: 0.35, pointRadius: 3 },
-          { label: "Assurance Vie", data: sorted.map(s => s.vie), borderColor: "#D9A6B3", backgroundColor: "#D9A6B3", tension: 0.35, pointRadius: 3 },
-          { label: "Épargne salariale", data: sorted.map(s => s.doca), borderColor: "#F3C78A", backgroundColor: "#F3C78A", tension: 0.35, pointRadius: 3 },
-          { label: "Total", data: sorted.map(s => s.la + s.vie + s.doca), borderColor: "#2F3437", backgroundColor: "#2F3437", tension: 0.35, pointRadius: 3, borderWidth: 2.5 },
-        ],
+        datasets: SAVINGS_SERIES.map(s => ({
+          label: s.label,
+          data: dataByKey[s.key],
+          borderColor: s.color,
+          backgroundColor: s.color,
+          tension: 0.35,
+          pointRadius: 3,
+          borderWidth: s.key === "total" ? 2.5 : 2,
+          hidden: !savingsVisibility[s.key],
+        })),
       },
       options: {
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 10, font: { family: "Inter" } } },
-          tooltip: { enabled: !hideAmounts },
+          legend: { display: false },
+          tooltip: {
+            enabled: !hideAmounts,
+            callbacks: { label: ctx => `${ctx.dataset.label} : ${moneyRound(ctx.parsed.y)}` },
+          },
         },
         scales: {
-          y: { ticks: { display: !hideAmounts, callback: v => money(v) }, grid: { display: false } },
+          y: { ticks: { display: !hideAmounts, callback: v => moneyRound(v) }, grid: { display: false } },
           x: { grid: { display: false } },
         },
       },
     });
   }
 }
+
+document.getElementById("savingsLegend").addEventListener("change", (e) => {
+  const key = e.target.dataset.series;
+  if (!key) return;
+  savingsVisibility[key] = e.target.checked;
+  if (savingsChart) {
+    const index = SAVINGS_SERIES.findIndex(s => s.key === key);
+    savingsChart.setDatasetVisibility(index, e.target.checked);
+    savingsChart.update();
+  }
+});
 
 document.getElementById("savingsBody").addEventListener("click", (e) => {
   const id = e.target.dataset.deleteSaving;
@@ -659,9 +749,12 @@ function monthsWithDataInYear(year) {
 function renderYearlyComparison() {
   const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
   const head = document.getElementById("yearlyHead");
-  head.innerHTML = `<th class="sticky-col">Catégorie</th>` +
-    years.map(y => `<th class="num">${y} (moy./mois)</th>`).join("") +
-    years.slice(1).map((y, i) => `<th class="num">Écart ${years[i]}→${y}</th>`).join("");
+  let headHtml = `<th class="sticky-col">Catégorie</th>`;
+  years.forEach((y, i) => {
+    headHtml += `<th class="num">${y} (moy./mois)</th>`;
+    if (i < years.length - 1) headHtml += `<th class="num muted-col">Écart ${y}→${years[i + 1]}</th>`;
+  });
+  head.innerHTML = headHtml;
 
   const body = document.getElementById("yearlyBody");
   body.innerHTML = "";
@@ -682,15 +775,15 @@ function renderYearlyComparison() {
 
     const hasEnvelope = cat.type === "expense" && cat.budget > 0;
     let row = `<td class="sticky-col">${catLabel(cat)}</td>`;
-    avgs.forEach(v => {
+    avgs.forEach((v, i) => {
       let cls = "";
       if (v !== 0 && hasEnvelope) cls = Math.abs(v) > cat.budget ? "neg" : "pos";
       row += `<td class="num ${cls}">${v === 0 ? "—" : moneySigned(v)}</td>`;
+      if (i < avgs.length - 1) {
+        const diff = avgs[i + 1] - avgs[i];
+        row += `<td class="num muted-col">${diff === 0 ? "—" : moneySigned(diff)}</td>`;
+      }
     });
-    for (let i = 1; i < avgs.length; i++) {
-      const diff = avgs[i] - avgs[i - 1];
-      row += `<td class="num">${diff === 0 ? "—" : moneySigned(diff)}</td>`;
-    }
     const tr = document.createElement("tr");
     tr.innerHTML = row;
     body.appendChild(tr);
@@ -703,10 +796,15 @@ const MONTH_SHORT = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "
 function renderMonthlyPivot() {
   const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
   const yearSelect = document.getElementById("monthlyYearFilter");
-  const prevYear = yearSelect.value;
-  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
-  if (years.includes(prevYear)) yearSelect.value = prevYear;
-  else if (years.length) yearSelect.value = years[years.length - 1];
+  const currentOptions = [...yearSelect.options].map(o => o.value);
+  const optionsChanged = currentOptions.length !== years.length || currentOptions.some((v, i) => v !== years[i]);
+
+  if (optionsChanged) {
+    const prevYear = yearSelect.value;
+    yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
+    if (years.includes(prevYear)) yearSelect.value = prevYear;
+    else if (years.length) yearSelect.value = years[years.length - 1];
+  }
 
   const year = yearSelect.value;
   const head = document.getElementById("monthlyHead");

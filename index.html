@@ -77,9 +77,9 @@
 
     <header class="topbar">
       <div class="month-nav">
-        <button id="prevMonth" aria-label="Mois précédent">←</button>
+        <button id="prevMonth" aria-label="Mois précédent"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
         <span id="monthDisplay">—</span>
-        <button id="nextMonth" aria-label="Mois suivant">→</button>
+        <button id="nextMonth" aria-label="Mois suivant"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
       </div>
     </header>
 
@@ -87,6 +87,10 @@
 
       <!-- TABLEAU DE BORD -->
       <section class="tab-panel active" id="panel-dashboard">
+
+        <div class="greeting-banner">
+          <p id="greetingText">Bonjour !</p>
+        </div>
 
         <div class="kpi-row">
           <div class="kpi kpi-sage">
@@ -160,6 +164,19 @@
           <button type="submit" class="btn-primary">Enregistrer l'opération</button>
           <p class="form-feedback" id="txFeedback"></p>
         </form>
+
+        <div class="form-card import-card">
+          <div class="import-card-header">
+            <h2 class="section-title" style="margin:0;">Importer un relevé de dépenses</h2>
+            <span class="badge-soon">Bientôt disponible</span>
+          </div>
+          <p class="hint" style="margin:8px 0 16px;">Dépose un relevé bancaire (PDF) et laisse l'app détecter et classer automatiquement chaque opération.</p>
+          <div class="import-dropzone">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            <p>Glisser un fichier PDF ici</p>
+            <button type="button" class="btn-secondary" disabled>Choisir un fichier</button>
+          </div>
+        </div>
       </section>
 
       <!-- CATÉGORIES -->
@@ -268,8 +285,20 @@
         <h2 class="section-title">Suivi épargne</h2>
         <p class="hint">Photographie de ton épargne globale au 1er de chaque mois — comme ton tableau LA / VIE / DOCA.</p>
 
+        <div class="kpi-row" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px;margin-bottom:16px;">
+          <div class="kpi kpi-sage">
+            <span class="kpi-label">Évolution depuis janvier</span>
+            <span class="kpi-value" id="savingsYtdChange">—</span>
+          </div>
+          <div class="kpi kpi-peony">
+            <span class="kpi-label">Versé vers le Livret A cette année</span>
+            <span class="kpi-value" id="savingsToLA">—</span>
+          </div>
+        </div>
+
         <div class="chart-card savings-chart-card">
           <canvas id="savingsChart" height="220"></canvas>
+          <div class="savings-legend" id="savingsLegend"></div>
         </div>
 
         <div class="table-scroll">
