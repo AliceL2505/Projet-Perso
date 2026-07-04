@@ -1,5 +1,5 @@
 :root {
-  /* Couleurs de marque Paeonia */
+  /* Couleurs de marque Oseille */
   --paper: #FAF9F6;
   --card: #FFFFFF;
   --ink: #2F3437;
@@ -9,8 +9,8 @@
   --sage: #8EA58B;
   --sage-dim: #74886F;
   --sage-tint: #EDF2EC;
-  --peony: #E7C8CF;
-  --peony-tint: #FBF1F3;
+  --peony: #A3B860;
+  --peony-tint: #F0F4E2;
 
   --success: #8DBB8A;
   --success-tint: #EAF4E9;
@@ -73,7 +73,7 @@ body {
   padding: 40px 48px 70px;
 }
 
-/* ---------- Logo Paeonia (icône pivoine géométrique) ---------- */
+/* ---------- Logo Oseille (icône feuille d'oseille) ---------- */
 .paeonia-mark { display: inline-flex; flex-shrink: 0; }
 .paeonia-mark svg { display: block; }
 
@@ -121,8 +121,8 @@ body {
   width: 232px;
   flex-shrink: 0;
   min-height: 100vh;
-  background: #5F7A5B;
-  border-right: 1px solid #516A4D;
+  background: #6E2C3B;
+  border-right: 1px solid #5A2330;
   padding: 36px 18px;
   display: flex;
   flex-direction: column;
@@ -237,15 +237,75 @@ body.hide-amounts input[data-saved-for]:focus {
   font-size: 11.5px;
   color: rgba(250,249,246,0.55);
   padding: 0 10px;
-  margin: 0;
+  margin: 0 0 12px;
 }
+
+.sidebar-profile-wrap { position: relative; }
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.18);
+  padding: 12px 8px 0;
+  cursor: pointer;
+  color: #fff;
+}
+.sidebar-profile:hover { opacity: 0.85; }
+.profile-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #A3B860;
+  color: #3B2A2E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.profile-name { font-size: 13px; font-weight: 500; }
+.sidebar.collapsed .sidebar-profile { justify-content: center; padding-left: 0; padding-right: 0; }
+
+.profile-menu {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 8px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-width: 160px;
+  z-index: 20;
+}
+.profile-menu.open { display: block; }
+.profile-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.profile-menu button:hover { background: var(--sage-tint); }
+.profile-menu button[data-profile-action="logout"] { color: var(--danger); }
+.sidebar.collapsed .profile-menu { left: 8px; }
 
 /* Sidebar repliée : icônes seules */
 .sidebar.collapsed { width: 76px; padding-left: 14px; padding-right: 14px; }
 .sidebar.collapsed .tab-label { display: none; }
 .sidebar.collapsed .tab { justify-content: center; padding: 11px; }
 .sidebar.collapsed .sidebar-title { justify-content: center; }
-.sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); position: absolute; top: 40px; right: -12px; background: #5F7A5B; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 24px; height: 24px; align-items: center; justify-content: center; }
+.sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); position: absolute; top: 40px; right: -12px; background: #6E2C3B; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 24px; height: 24px; align-items: center; justify-content: center; }
 .sidebar.collapsed { position: sticky; }
 .sidebar.collapsed .sidebar-toggle { justify-content: center; padding: 10px; }
 
@@ -618,7 +678,8 @@ input:focus, select:focus {
 .import-dropzone button { opacity: 0.6; cursor: not-allowed; }
 
 /* ---------- Catégories ---------- */
-.category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 900px; }
+.category-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 1200px; }
+@media (max-width: 980px) { .category-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .category-list { grid-template-columns: 1fr; } }
 .category-item {
   display: flex;

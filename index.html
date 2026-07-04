@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Paeonia</title>
+<title>Oseille</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -21,10 +21,10 @@
         <circle cx="14.94" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
         <circle cx="9.06" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
         <circle cx="7.24" cy="10.46" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
-        <circle cx="12" cy="12" r="2.4" fill="#E7C8CF"/>
+        <circle cx="12" cy="12" r="2.4" fill="#A3B860"/>
       </svg>
     </span>
-    <h1>Paeonia</h1>
+    <h1>Oseille</h1>
     <p>Entrez le mot de passe pour continuer.</p>
     <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="off" required autofocus>
     <button type="submit" class="btn-primary">Déverrouiller</button>
@@ -44,10 +44,10 @@
           <circle cx="14.94" cy="16.05" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
           <circle cx="9.06" cy="16.05" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
           <circle cx="7.24" cy="10.46" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
-          <circle cx="12" cy="12" r="2.4" fill="#E7C8CF"/>
+          <circle cx="12" cy="12" r="2.4" fill="#A3B860"/>
         </svg>
       </span>
-      <h1 class="tab-label">Paeonia</h1>
+      <h1 class="tab-label">Oseille</h1>
       <button type="button" id="sidebarCollapseBtn" class="sidebar-collapse-btn" aria-label="Réduire la barre latérale">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
       </button>
@@ -71,6 +71,18 @@
       <span id="hideAmountsLabel" class="tab-label">Masquer les sommes</span>
     </button>
     <p class="sidebar-footnote tab-label">Vos données restent sur cet appareil.</p>
+
+    <div class="sidebar-profile-wrap">
+      <button type="button" id="profileButton" class="sidebar-profile">
+        <span class="profile-avatar">A</span>
+        <span class="tab-label profile-name">Alice</span>
+      </button>
+      <div class="profile-menu" id="profileMenu">
+        <button type="button" data-profile-action="profil">Profil</button>
+        <button type="button" data-profile-action="parametres">Paramètres</button>
+        <button type="button" data-profile-action="logout">Déconnexion</button>
+      </div>
+    </div>
   </nav>
 
   <div class="main-col">
@@ -121,6 +133,14 @@
             <canvas id="expensePie" width="220" height="220"></canvas>
             <div class="pie-legend" id="pieLegend"></div>
           </div>
+        </div>
+
+        <div class="form-card" id="recurringCard" style="display:none;">
+          <div class="import-card-header">
+            <h2 class="section-title" style="margin:0;">Prélèvements habituels à venir</h2>
+          </div>
+          <p class="hint" id="recurringNote" style="margin:8px 0 14px;"></p>
+          <div class="mini-list" id="recurringList"></div>
         </div>
 
         <h2 class="section-title">Dernières opérations</h2>

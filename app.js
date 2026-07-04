@@ -133,7 +133,7 @@ function catLabel(cat) {
   return `${catEmoji(cat.id)} ${cat.name}`;
 }
 
-const PIE_COLORS = ["#8EA58B", "#E7C8CF", "#F3C78A", "#D97A6C", "#A9C4A5", "#C9A0AE", "#B9A38C", "#7C9B8E", "#E3B7A0", "#9FB4C7", "#CBB994", "#8B9DC3"];
+const PIE_COLORS = ["#8EA58B", "#A3B860", "#F3C78A", "#D97A6C", "#A9C4A5", "#8FAF7A", "#B9A38C", "#7C9B8E", "#B5C98F", "#9FB4C7", "#CBB994", "#8B9DC3"];
 
 /* ---------------- Navigation entre onglets ---------------- */
 const MONTH_SCOPED_TABS = ["dashboard", "history"];
@@ -184,6 +184,73 @@ function transactionsForMonth(date) {
 }
 
 /* ---------------- Tableau de bord ---------------- */
+/* ---------------- Dépenses récurrentes (copilote financier) ---------------- */
+function detectRecurringExpenses() {
+  const currentKey = monthKey(currentMonth);
+
+  // Fenêtre glissante : les 6 mois précédant le mois affiché (hors mois en cours)
+  const windowMonths = [];
+  const cursor = new Date(currentMonth);
+  for (let i = 1; i <= 6; i++) {
+    cursor.setMonth(currentMonth.getMonth() - i);
+    windowMonths.push(monthKey(cursor));
+  }
+
+  const signatures = {}; // "catId|note" -> [{monthKey, amount}]
+  state.transactions.forEach(t => {
+    if (t.amount >= 0) return; // seulement les dépenses
+    const note = (t.note || "").trim().toLowerCase();
+    if (!note) return; // il faut un intitulé pour identifier un prélèvement récurrent
+    const month = t.date.slice(0, 7);
+    if (!windowMonths.includes(month) && month !== currentKey) return;
+    const sig = t.categoryId + "|" + note;
+    (signatures[sig] = signatures[sig] || []).push({ month, amount: t.amount });
+  });
+
+  const upcoming = [];
+  Object.entries(signatures).forEach(([sig, occurrences]) => {
+    const pastOccurrences = occurrences.filter(o => o.month !== currentKey);
+    const distinctPastMonths = new Set(pastOccurrences.map(o => o.month));
+    if (distinctPastMonths.size < 3) return; // pas assez régulier sur les 6 derniers mois
+    const alreadyThisMonth = occurrences.some(o => o.month === currentKey);
+    if (alreadyThisMonth) return; // déjà prélevée ce mois-ci
+
+    const [catId, note] = sig.split("|");
+    const cat = catById(catId);
+    const avgAmount = pastOccurrences.reduce((s, o) => s + o.amount, 0) / pastOccurrences.length;
+    upcoming.push({ catId, cat, note, amount: -avgAmount });
+  });
+
+  upcoming.sort((a, b) => b.amount - a.amount);
+  return upcoming;
+}
+
+function renderRecurringExpenses(currentRemaining) {
+  const card = document.getElementById("recurringCard");
+  const upcoming = detectRecurringExpenses();
+
+  if (upcoming.length === 0) {
+    card.style.display = "none";
+    return;
+  }
+  card.style.display = "";
+
+  const total = upcoming.reduce((s, u) => s + u.amount, 0);
+  const projected = currentRemaining - total;
+  const shown = upcoming.slice(0, 8);
+
+  document.getElementById("recurringList").innerHTML = shown.map(u => `
+    <div class="mini-item">
+      <span><span class="cat-tag">${u.cat ? catLabel(u.cat) : "🔸"}</span>${u.note}</span>
+      <span class="amt">−${money(u.amount)}</span>
+    </div>`).join("") + (upcoming.length > shown.length
+      ? `<p class="hint" style="margin:6px 0 0;">+ ${upcoming.length - shown.length} autre${upcoming.length - shown.length > 1 ? "s" : ""} prélèvement${upcoming.length - shown.length > 1 ? "s" : ""} habituel${upcoming.length - shown.length > 1 ? "s" : ""}</p>`
+      : "");
+
+  document.getElementById("recurringNote").innerHTML =
+    `Il te reste probablement <strong>${moneySigned(projected)}</strong> une fois ces ${upcoming.length} prélèvement${upcoming.length > 1 ? "s" : ""} habituel${upcoming.length > 1 ? "s" : ""} passé${upcoming.length > 1 ? "s" : ""} (estimation basée sur ton historique).`;
+}
+
 function renderDashboard() {
   const txs = transactionsForMonth(currentMonth);
 
@@ -225,6 +292,8 @@ function renderDashboard() {
     msg += `Continue comme ça !`;
   }
   greeting.innerHTML = msg;
+
+  renderRecurringExpenses(income - expense);
 
   // Jauges par catégorie de dépense ayant un budget défini
   const container = document.getElementById("gaugesContainer");
@@ -625,7 +694,7 @@ function moneyRound(n) {
 
 const SAVINGS_SERIES = [
   { key: "la", label: "Livret A", color: "#8EA58B" },
-  { key: "vie", label: "Assurance Vie", color: "#D9A6B3" },
+  { key: "vie", label: "Assurance Vie", color: "#C7D68A" },
   { key: "doca", label: "Épargne salariale", color: "#F3C78A" },
   { key: "total", label: "Total", color: "#2F3437" },
 ];
@@ -879,6 +948,32 @@ function renderMonthlyPivot() {
 }
 
 document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
+
+/* ---------------- Menu profil ---------------- */
+document.getElementById("profileButton").addEventListener("click", (e) => {
+  e.stopPropagation();
+  document.getElementById("profileMenu").classList.toggle("open");
+});
+
+document.addEventListener("click", () => {
+  document.getElementById("profileMenu").classList.remove("open");
+});
+
+document.getElementById("profileMenu").addEventListener("click", (e) => {
+  const action = e.target.dataset.profileAction;
+  if (!action) return;
+  if (action === "logout") {
+    sessionStorage.removeItem(LOCK_SESSION_KEY);
+    document.getElementById("profileMenu").classList.remove("open");
+    document.getElementById("appRoot").style.display = "none";
+    document.getElementById("lockScreen").style.display = "flex";
+    document.getElementById("lockInput").value = "";
+    document.getElementById("lockInput").focus();
+  } else {
+    document.getElementById("profileMenu").classList.remove("open");
+    alert("Bientôt disponible.");
+  }
+});
 
 /* ---------------- Barre latérale rétractable ---------------- */
 let sidebarCollapsed = localStorage.getItem("paeonia_sidebarCollapsed") === "1";
