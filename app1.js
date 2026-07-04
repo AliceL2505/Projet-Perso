@@ -5,6 +5,7 @@
    ========================================================= */
 
 const STORAGE_KEY = "cahierBudget_v1";
+const USER_NAME = "Alice";
 
 const DEFAULT_CATEGORIES = [
   { id: "salaire", name: "Salaire", type: "income", budget: 0 },
@@ -121,7 +122,7 @@ function sortedCategories() {
 const CATEGORY_EMOJI = {
   salaire: "💼", primes: "🎁", remboursements: "💸",
   charges: "🏠", courses: "🛒", restaurants: "🍽️",
-  plaisirs: "🎉", vacances: "✈️", vetements: "👗",
+  plaisirs: "🎉", vacances: "🌴", vetements: "👗",
   sante: "💊", voiture: "🚗", owen: "🐾",
   cadeaux: "🎀", amenagement: "🛋️", epargne: "🌱", epargne_tf: "🏛️",
 };
@@ -139,6 +140,7 @@ const MONTH_SCOPED_TABS = ["dashboard", "history"];
 
 function updateTopbarVisibility(tabName) {
   document.querySelector(".topbar").style.display = MONTH_SCOPED_TABS.includes(tabName) ? "" : "none";
+  document.getElementById("greetingBanner").style.display = tabName === "dashboard" ? "" : "none";
 }
 
 document.getElementById("tabs").addEventListener("click", (e) => {
@@ -201,6 +203,28 @@ function renderDashboard() {
   animateKpi("kpiExpense", expense, money);
   animateKpi("kpiRemaining", income - expense, moneySigned);
   animateKpi("kpiSaved", saved, moneySigned);
+
+  const totalBudget = state.categories
+    .filter(c => c.type === "expense" && c.budget > 0)
+    .reduce((s, c) => s + c.budget, 0);
+  const remainingBudget = totalBudget - expense;
+  const greeting = document.getElementById("greetingText");
+  let msg = `<span class="greeting-name">Bonjour ${USER_NAME} !</span>`;
+  if (saved > 0) {
+    msg += `Tu as économisé ${money(saved)} ce mois-ci. `;
+  } else if (expense > 0) {
+    msg += `Pas encore d'épargne enregistrée ce mois-ci. `;
+  } else {
+    msg += `Le mois démarre tout juste. `;
+  }
+  if (totalBudget > 0) {
+    msg += remainingBudget >= 0
+      ? `Il te reste ${money(remainingBudget)} avant ton budget prévu. Continue comme ça !`
+      : `Tu as dépassé ton budget prévu de ${money(-remainingBudget)} ce mois-ci.`;
+  } else {
+    msg += `Continue comme ça !`;
+  }
+  greeting.innerHTML = msg;
 
   // Jauges par catégorie de dépense ayant un budget défini
   const container = document.getElementById("gaugesContainer");
@@ -357,14 +381,24 @@ txForm.addEventListener("submit", (e) => {
 });
 
 /* ---------------- Catégories ---------------- */
+function categoriesForManagementList() {
+  const income = state.categories
+    .filter(c => c.type === "income")
+    .sort((a, b) => (a.id === "salaire" ? -1 : b.id === "salaire" ? 1 : a.name.localeCompare(b.name, "fr")));
+  const expense = state.categories
+    .filter(c => c.type === "expense")
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  return [...income, ...expense];
+}
+
 function renderCategoryList() {
   const list = document.getElementById("categoryList");
   list.innerHTML = "";
-  sortedCategories().forEach(cat => {
+  categoriesForManagementList().forEach(cat => {
     const row = document.createElement("div");
-    row.className = "category-item";
+    row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
     row.innerHTML = `
-      <span class="cname">${cat.name}</span>
+      <span class="cname">${catLabel(cat)}</span>
       <span class="ctype">${cat.type === "income" ? "Revenu" : "Dépense"}</span>
       ${cat.type === "expense" ? `<input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}">` : `<span></span>`}
       <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
@@ -418,10 +452,14 @@ function renderHistoryFilterOptions() {
   sortedCategories().forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat.id;
-    opt.textContent = cat.name;
+    opt.textContent = catLabel(cat);
     filter.appendChild(opt);
   });
   if (prev) filter.value = prev;
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function renderHistory() {
@@ -436,14 +474,15 @@ function renderHistory() {
   document.getElementById("historyEmpty").style.display = txs.length ? "none" : "block";
 
   txs.forEach(t => {
-    const cat = catById(t.categoryId);
     const tr = document.createElement("tr");
     if (t.amount >= 0) tr.className = "row-income";
-    const [y, m, d] = t.date.split("-");
+    const catOptions = sortedCategories()
+      .map(c => `<option value="${c.id}" ${c.id === t.categoryId ? "selected" : ""}>${catLabel(c)}</option>`)
+      .join("");
     tr.innerHTML = `
-      <td>${d}/${m}/${y}</td>
-      <td>${cat ? cat.name : "Catégorie supprimée"}</td>
-      <td>${t.note || ""}</td>
+      <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
+      <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
+      <td><input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
       <td class="num">${moneySigned(t.amount)}</td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
@@ -451,6 +490,23 @@ function renderHistory() {
 }
 
 document.getElementById("historyFilter").addEventListener("change", renderHistory);
+
+document.getElementById("historyBody").addEventListener("change", (e) => {
+  const txId = e.target.dataset.txId;
+  if (!txId) return;
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  if (e.target.classList.contains("inline-cat-select")) {
+    t.categoryId = e.target.value;
+  } else if (e.target.classList.contains("inline-date-input")) {
+    if (e.target.value) t.date = e.target.value;
+  } else if (e.target.classList.contains("inline-note-input")) {
+    t.note = e.target.value.trim();
+  }
+  saveState();
+  renderHistory();
+  renderDashboard();
+});
 
 document.getElementById("historyBody").addEventListener("click", (e) => {
   const id = e.target.dataset.deleteTx;
@@ -562,6 +618,19 @@ projectForm.addEventListener("submit", (e) => {
 let savingsChart = null;
 const SAVINGS_MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
+function moneyRound(n) {
+  if (hideAmounts) return "•••• €";
+  return Math.round(n).toLocaleString("fr-FR") + " €";
+}
+
+const SAVINGS_SERIES = [
+  { key: "la", label: "Livret A", color: "#8EA58B" },
+  { key: "vie", label: "Assurance Vie", color: "#D9A6B3" },
+  { key: "doca", label: "Épargne salariale", color: "#F3C78A" },
+  { key: "total", label: "Total", color: "#2F3437" },
+];
+let savingsVisibility = { la: true, vie: true, doca: true, total: true };
+
 function renderSavings() {
   const sorted = [...state.savings].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -585,6 +654,36 @@ function renderSavings() {
     });
   }
 
+  // Évolution depuis janvier de l'année du dernier point connu
+  const ytdEl = document.getElementById("savingsYtdChange");
+  if (sorted.length > 0) {
+    const lastYear = sorted[sorted.length - 1].date.slice(0, 4);
+    const yearSnapshots = sorted.filter(s => s.date.startsWith(lastYear + "-"));
+    const first = yearSnapshots[0];
+    const last = yearSnapshots[yearSnapshots.length - 1];
+    const delta = (last.la + last.vie + last.doca) - (first.la + first.vie + first.doca);
+    ytdEl.textContent = moneySigned(delta);
+  } else {
+    ytdEl.textContent = "—";
+  }
+
+  // Versements Épargne + Épargne Taxe Foncière de l'année en cours, fléchés vers le Livret A
+  const laEl = document.getElementById("savingsToLA");
+  const currentYear = String(currentMonth.getFullYear());
+  const toLA = state.transactions
+    .filter(t => (t.categoryId === "epargne" || t.categoryId === "epargne_tf") && t.date.startsWith(currentYear + "-"))
+    .reduce((s, t) => s - t.amount, 0);
+  laEl.textContent = money(toLA);
+
+  // Légende à cases à cocher
+  const legend = document.getElementById("savingsLegend");
+  legend.innerHTML = SAVINGS_SERIES.map(s => `
+    <label>
+      <input type="checkbox" data-series="${s.key}" ${savingsVisibility[s.key] ? "checked" : ""}>
+      <span class="legend-swatch" style="background:${s.color}"></span>
+      ${s.label}
+    </label>`).join("");
+
   const canvas = document.getElementById("savingsChart");
   if (savingsChart) { savingsChart.destroy(); savingsChart = null; }
 
@@ -593,31 +692,55 @@ function renderSavings() {
       const [y, m] = s.date.split("-");
       return `${SAVINGS_MONTH_LABELS[parseInt(m, 10) - 1]} ${y.slice(2)}`;
     });
+    const dataByKey = {
+      la: sorted.map(s => s.la),
+      vie: sorted.map(s => s.vie),
+      doca: sorted.map(s => s.doca),
+      total: sorted.map(s => s.la + s.vie + s.doca),
+    };
     savingsChart = new Chart(canvas.getContext("2d"), {
       type: "line",
       data: {
         labels,
-        datasets: [
-          { label: "Livret A", data: sorted.map(s => s.la), borderColor: "#8EA58B", backgroundColor: "#8EA58B", tension: 0.35, pointRadius: 3 },
-          { label: "Assurance Vie", data: sorted.map(s => s.vie), borderColor: "#D9A6B3", backgroundColor: "#D9A6B3", tension: 0.35, pointRadius: 3 },
-          { label: "Épargne salariale", data: sorted.map(s => s.doca), borderColor: "#F3C78A", backgroundColor: "#F3C78A", tension: 0.35, pointRadius: 3 },
-          { label: "Total", data: sorted.map(s => s.la + s.vie + s.doca), borderColor: "#2F3437", backgroundColor: "#2F3437", tension: 0.35, pointRadius: 3, borderWidth: 2.5 },
-        ],
+        datasets: SAVINGS_SERIES.map(s => ({
+          label: s.label,
+          data: dataByKey[s.key],
+          borderColor: s.color,
+          backgroundColor: s.color,
+          tension: 0.35,
+          pointRadius: 3,
+          borderWidth: s.key === "total" ? 2.5 : 2,
+          hidden: !savingsVisibility[s.key],
+        })),
       },
       options: {
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 10, font: { family: "Inter" } } },
-          tooltip: { enabled: !hideAmounts },
+          legend: { display: false },
+          tooltip: {
+            enabled: !hideAmounts,
+            callbacks: { label: ctx => `${ctx.dataset.label} : ${moneyRound(ctx.parsed.y)}` },
+          },
         },
         scales: {
-          y: { ticks: { display: !hideAmounts, callback: v => money(v) }, grid: { display: false } },
+          y: { ticks: { display: !hideAmounts, callback: v => moneyRound(v) }, grid: { display: false } },
           x: { grid: { display: false } },
         },
       },
     });
   }
 }
+
+document.getElementById("savingsLegend").addEventListener("change", (e) => {
+  const key = e.target.dataset.series;
+  if (!key) return;
+  savingsVisibility[key] = e.target.checked;
+  if (savingsChart) {
+    const index = SAVINGS_SERIES.findIndex(s => s.key === key);
+    savingsChart.setDatasetVisibility(index, e.target.checked);
+    savingsChart.update();
+  }
+});
 
 document.getElementById("savingsBody").addEventListener("click", (e) => {
   const id = e.target.dataset.deleteSaving;
@@ -659,9 +782,12 @@ function monthsWithDataInYear(year) {
 function renderYearlyComparison() {
   const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
   const head = document.getElementById("yearlyHead");
-  head.innerHTML = `<th class="sticky-col">Catégorie</th>` +
-    years.map(y => `<th class="num">${y} (moy./mois)</th>`).join("") +
-    years.slice(1).map((y, i) => `<th class="num">Écart ${years[i]}→${y}</th>`).join("");
+  let headHtml = `<th class="sticky-col">Catégorie</th>`;
+  years.forEach((y, i) => {
+    headHtml += `<th class="num">${y} (moy./mois)</th>`;
+    if (i < years.length - 1) headHtml += `<th class="num muted-col">Écart ${y}→${years[i + 1]}</th>`;
+  });
+  head.innerHTML = headHtml;
 
   const body = document.getElementById("yearlyBody");
   body.innerHTML = "";
@@ -682,15 +808,15 @@ function renderYearlyComparison() {
 
     const hasEnvelope = cat.type === "expense" && cat.budget > 0;
     let row = `<td class="sticky-col">${catLabel(cat)}</td>`;
-    avgs.forEach(v => {
+    avgs.forEach((v, i) => {
       let cls = "";
       if (v !== 0 && hasEnvelope) cls = Math.abs(v) > cat.budget ? "neg" : "pos";
       row += `<td class="num ${cls}">${v === 0 ? "—" : moneySigned(v)}</td>`;
+      if (i < avgs.length - 1) {
+        const diff = avgs[i + 1] - avgs[i];
+        row += `<td class="num muted-col">${diff === 0 ? "—" : moneySigned(diff)}</td>`;
+      }
     });
-    for (let i = 1; i < avgs.length; i++) {
-      const diff = avgs[i] - avgs[i - 1];
-      row += `<td class="num">${diff === 0 ? "—" : moneySigned(diff)}</td>`;
-    }
     const tr = document.createElement("tr");
     tr.innerHTML = row;
     body.appendChild(tr);
@@ -703,10 +829,15 @@ const MONTH_SHORT = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "
 function renderMonthlyPivot() {
   const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
   const yearSelect = document.getElementById("monthlyYearFilter");
-  const prevYear = yearSelect.value;
-  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
-  if (years.includes(prevYear)) yearSelect.value = prevYear;
-  else if (years.length) yearSelect.value = years[years.length - 1];
+  const currentOptions = [...yearSelect.options].map(o => o.value);
+  const optionsChanged = currentOptions.length !== years.length || currentOptions.some((v, i) => v !== years[i]);
+
+  if (optionsChanged) {
+    const prevYear = yearSelect.value;
+    yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
+    if (years.includes(prevYear)) yearSelect.value = prevYear;
+    else if (years.length) yearSelect.value = years[years.length - 1];
+  }
 
   const year = yearSelect.value;
   const head = document.getElementById("monthlyHead");
@@ -749,6 +880,23 @@ function renderMonthlyPivot() {
 
 document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
 
+/* ---------------- Barre latérale rétractable ---------------- */
+let sidebarCollapsed = localStorage.getItem("paeonia_sidebarCollapsed") === "1";
+
+function applySidebarState() {
+  document.getElementById("tabs").classList.toggle("collapsed", sidebarCollapsed);
+  document.getElementById("sidebarCollapseBtn").setAttribute(
+    "aria-label",
+    sidebarCollapsed ? "Déplier la barre latérale" : "Réduire la barre latérale"
+  );
+}
+
+document.getElementById("sidebarCollapseBtn").addEventListener("click", () => {
+  sidebarCollapsed = !sidebarCollapsed;
+  localStorage.setItem("paeonia_sidebarCollapsed", sidebarCollapsed ? "1" : "0");
+  applySidebarState();
+});
+
 /* ---------------- Démarrage protégé par mot de passe ---------------- */
 const LOCK_PASSWORD = "owen";
 const LOCK_SESSION_KEY = "cahierBudget_unlocked";
@@ -757,6 +905,7 @@ function unlockApp() {
   document.getElementById("lockScreen").style.display = "none";
   document.getElementById("appRoot").style.display = "";
   applyHideAmountsUI();
+  applySidebarState();
   updateTopbarVisibility("dashboard");
   renderAll();
 }
