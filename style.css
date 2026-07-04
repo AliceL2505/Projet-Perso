@@ -618,8 +618,7 @@ input:focus, select:focus {
 .import-dropzone button { opacity: 0.6; cursor: not-allowed; }
 
 /* ---------- Catégories ---------- */
-.category-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 1200px; }
-@media (max-width: 980px) { .category-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 900px; }
 @media (max-width: 640px) { .category-list { grid-template-columns: 1fr; } }
 .category-item {
   display: flex;
