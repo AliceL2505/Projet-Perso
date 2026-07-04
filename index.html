@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paeonia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="lockScreen" class="lock-screen">
+  <form id="lockForm" class="lock-card">
+    <span class="paeonia-mark">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="7" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="16.76" cy="10.46" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="14.94" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="9.06" cy="16.05" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="7.24" cy="10.46" r="5.5" fill="none" stroke="#8EA58B" stroke-width="1.4"/>
+        <circle cx="12" cy="12" r="2.4" fill="#E7C8CF"/>
+      </svg>
+    </span>
+    <h1>Paeonia</h1>
+    <p>Entrez le mot de passe pour continuer.</p>
+    <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="off" required autofocus>
+    <button type="submit" class="btn-primary">Déverrouiller</button>
+    <p class="lock-error" id="lockError"></p>
+  </form>
+</div>
+
+<div class="layout" id="appRoot" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="tabs">
+    <div class="sidebar-title">
+      <span class="paeonia-mark">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="7" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
+          <circle cx="16.76" cy="10.46" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
+          <circle cx="14.94" cy="16.05" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
+          <circle cx="9.06" cy="16.05" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
+          <circle cx="7.24" cy="10.46" r="5.5" fill="none" stroke="#FAF9F6" stroke-width="1.4"/>
+          <circle cx="12" cy="12" r="2.4" fill="#E7C8CF"/>
+        </svg>
+      </span>
+      <h1 class="tab-label">Paeonia</h1>
+      <button type="button" id="sidebarCollapseBtn" class="sidebar-collapse-btn" aria-label="Réduire la barre latérale">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+    </div>
+    <button class="tab active" data-tab="dashboard"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg><span class="tab-label">Tableau de bord</span></button>
+    <button class="tab" data-tab="add"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span class="tab-label">Ajouter</span></button>
+    <button class="tab" data-tab="categories"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3h6a2 2 0 0 1 2 2v6L9.5 20.5a2 2 0 0 1-2.8 0l-4.2-4.2a2 2 0 0 1 0-2.8L11 3Z"/><circle cx="15" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg><span class="tab-label">Catégories</span></button>
+    <button class="tab" data-tab="history"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span class="tab-label">Historique</span></button>
+    <button class="tab" data-tab="projects"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 11C8.5 11 6 8.5 6 5c3.5 0 6 2.5 6 6Z"/><path d="M12 11c3.5 0 6-2.5 6-6-3.5 0-6 2.5-6 6Z"/></svg><span class="tab-label">Mes projets</span></button>
+    <div class="sidebar-divider"></div>
+    <p class="sidebar-group-label tab-label">Repères Excel</p>
+    <button class="tab" data-tab="yearly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><rect x="7" y="12" width="2.6" height="8"/><rect x="12.7" y="7" width="2.6" height="13"/><rect x="18.4" y="15" width="2.6" height="5"/></svg><span class="tab-label">Comparatif annuel</span></button>
+    <button class="tab" data-tab="monthly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3.5 10h17"/></svg><span class="tab-label">Résumé mensuel</span></button>
+    <button class="tab" data-tab="savings"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg><span class="tab-label">Suivi épargne</span></button>
+    <div class="sidebar-spacer"></div>
+    <button type="button" id="toggleHideAmounts" class="sidebar-toggle">
+      <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span id="hideAmountsLabel" class="tab-label">Masquer les sommes</span>
+    </button>
+    <p class="sidebar-footnote tab-label">Vos données restent sur cet appareil.</p>
+  </nav>
+
+  <div class="main-col">
+
+    <div class="greeting-banner" id="greetingBanner">
+      <p id="greetingText">Bonjour !</p>
+    </div>
+
+    <header class="topbar">
+      <div class="month-nav">
+        <button id="prevMonth" aria-label="Mois précédent"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span id="monthDisplay">—</span>
+        <button id="nextMonth" aria-label="Mois suivant"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- TABLEAU DE BORD -->
+      <section class="tab-panel active" id="panel-dashboard">
+
+        <div class="kpi-row">
+          <div class="kpi kpi-sage">
+            <span class="kpi-label">Revenus du mois</span>
+            <span class="kpi-value" id="kpiIncome">0 €</span>
+          </div>
+          <div class="kpi kpi-peony">
+            <span class="kpi-label">Dépenses du mois</span>
+            <span class="kpi-value" id="kpiExpense">0 €</span>
+          </div>
+          <div class="kpi kpi-accent">
+            <span class="kpi-label">Reste à vivre</span>
+            <span class="kpi-value" id="kpiRemaining">0 €</span>
+          </div>
+          <div class="kpi kpi-peony">
+            <span class="kpi-label">Épargné ce mois</span>
+            <span class="kpi-value" id="kpiSaved">0 €</span>
+          </div>
+        </div>
+
+        <div class="dashboard-split">
+          <div class="dashboard-gauges-col">
+            <h2 class="section-title">Suivi des dépenses</h2>
+            <div class="gauges" id="gaugesContainer"></div>
+          </div>
+          <div class="chart-card">
+            <h2 class="section-title">Répartition des dépenses</h2>
+            <canvas id="expensePie" width="220" height="220"></canvas>
+            <div class="pie-legend" id="pieLegend"></div>
+          </div>
+        </div>
+
+        <h2 class="section-title">Dernières opérations</h2>
+        <div class="mini-list" id="recentList"></div>
+
+      </section>
+
+      <!-- AJOUTER -->
+      <section class="tab-panel" id="panel-add">
+        <div class="add-page-layout">
+        <form id="txForm" class="form-card">
+          <h2 class="section-title">Nouvelle opération</h2>
+
+          <div class="field-row">
+            <label>Date
+              <input type="date" id="txDate" required>
+            </label>
+            <label>Montant (€)
+              <input type="number" id="txAmount" step="0.01" min="0" placeholder="0,00" required>
+            </label>
+          </div>
+
+          <label>Catégorie
+            <select id="txCategory" required></select>
+          </label>
+
+          <div class="radio-row" role="radiogroup" aria-label="Sens de l'opération">
+            <label class="radio-choice">
+              <input type="radio" name="txSign" value="expense" checked>
+              <span>Dépense (sort du compte)</span>
+            </label>
+            <label class="radio-choice">
+              <input type="radio" name="txSign" value="income">
+              <span>Revenu / remboursement (rentre sur le compte)</span>
+            </label>
+          </div>
+
+          <label>Note (optionnel)
+            <input type="text" id="txNote" placeholder="Ex : Déjeuner avec Owen">
+          </label>
+
+          <button type="submit" class="btn-primary">Enregistrer l'opération</button>
+          <p class="form-feedback" id="txFeedback"></p>
+        </form>
+
+        <div class="form-card import-card">
+          <div class="import-card-header">
+            <h2 class="section-title" style="margin:0;">Importer un relevé de dépenses</h2>
+            <span class="badge-soon">Bientôt disponible</span>
+          </div>
+          <p class="hint" style="margin:8px 0 16px;">Dépose un relevé bancaire (PDF) et laisse l'app détecter et classer automatiquement chaque opération.</p>
+          <div class="import-dropzone">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            <p>Glisser un fichier PDF ici</p>
+            <button type="button" class="btn-secondary" disabled>Choisir un fichier</button>
+          </div>
+        </div>
+        </div>
+      </section>
+
+      <!-- CATÉGORIES -->
+      <section class="tab-panel" id="panel-categories">
+        <h2 class="section-title">Vos catégories</h2>
+        <p class="hint">Ajustez le budget mensuel de chaque catégorie. Ces montants servent de référence pour le tableau de bord.</p>
+        <div class="category-list" id="categoryList"></div>
+
+        <h2 class="section-title">Ajouter une catégorie</h2>
+        <form id="catForm" class="form-card">
+          <div class="field-row">
+            <label>Nom
+              <input type="text" id="catName" placeholder="Ex : Cadeaux" required>
+            </label>
+            <label>Type
+              <select id="catType">
+                <option value="expense">Dépense</option>
+                <option value="income">Revenu</option>
+              </select>
+            </label>
+            <label>Budget mensuel (€)
+              <input type="number" id="catBudget" min="0" step="1" placeholder="0">
+            </label>
+          </div>
+          <button type="submit" class="btn-secondary">Ajouter la catégorie</button>
+        </form>
+      </section>
+
+      <!-- HISTORIQUE -->
+      <section class="tab-panel" id="panel-history">
+        <div class="history-header">
+          <h2 class="section-title">Historique du mois</h2>
+          <select id="historyFilter">
+            <option value="all">Toutes les catégories</option>
+          </select>
+        </div>
+        <table class="history-table">
+          <thead>
+            <tr><th>Date</th><th>Catégorie</th><th>Note</th><th class="num">Montant</th><th></th></tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <p class="empty-state" id="historyEmpty" style="display:none;">Aucune opération ce mois-ci. Ajoutez-en une depuis l'onglet « Ajouter ».</p>
+      </section>
+
+      <!-- MES PROJETS -->
+      <section class="tab-panel" id="panel-projects">
+        <h2 class="section-title">Mes projets</h2>
+        <p class="hint">Anticipe une dépense future (vacances, réparation, achat...) et suis ton épargne dédiée.</p>
+        <div class="project-list" id="projectList"></div>
+
+        <h2 class="section-title">Nouveau projet</h2>
+        <form id="projectForm" class="form-card">
+          <div class="field-row">
+            <label>Nom du projet
+              <input type="text" id="projName" placeholder="Ex : Vacances été 2027" required>
+            </label>
+            <label>Montant objectif (€)
+              <input type="number" id="projTarget" min="0" step="1" placeholder="1000" required>
+            </label>
+          </div>
+          <div class="field-row">
+            <label>Déjà mis de côté (€)
+              <input type="number" id="projSaved" min="0" step="1" placeholder="0">
+            </label>
+            <label>Date cible (optionnel)
+              <input type="date" id="projDate">
+            </label>
+          </div>
+          <label>Note (optionnel)
+            <input type="text" id="projNote" placeholder="Ex : Croatie avec Marion">
+          </label>
+          <button type="submit" class="btn-secondary">Créer le projet</button>
+        </form>
+      </section>
+
+      <!-- COMPARATIF ANNUEL -->
+      <section class="tab-panel" id="panel-yearly">
+        <h2 class="section-title">Comparatif annuel par catégorie</h2>
+        <p class="hint">Moyenne mensuelle dépensée par catégorie, année par année.</p>
+        <div class="table-scroll">
+          <table class="history-table" id="yearlyTable">
+            <thead><tr id="yearlyHead"></tr></thead>
+            <tbody id="yearlyBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- RÉSUMÉ MENSUEL -->
+      <section class="tab-panel" id="panel-monthly">
+        <div class="history-header">
+          <h2 class="section-title">Résumé mensuel par catégorie</h2>
+          <select id="monthlyYearFilter"></select>
+        </div>
+        <p class="hint">Total par catégorie et par mois — comme ton onglet « Synthèse par mois ».</p>
+        <div class="table-scroll">
+          <table class="history-table" id="monthlyTable">
+            <thead><tr id="monthlyHead"></tr></thead>
+            <tbody id="monthlyBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SUIVI ÉPARGNE -->
+      <section class="tab-panel" id="panel-savings">
+        <h2 class="section-title">Suivi épargne</h2>
+        <p class="hint">Photographie de ton épargne globale au 1er de chaque mois — comme ton tableau LA / VIE / DOCA.</p>
+
+        <div class="kpi-row" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px;margin-bottom:16px;">
+          <div class="kpi kpi-sage">
+            <span class="kpi-label">Évolution depuis janvier</span>
+            <span class="kpi-value" id="savingsYtdChange">—</span>
+          </div>
+          <div class="kpi kpi-peony">
+            <span class="kpi-label">Versé vers le Livret A cette année</span>
+            <span class="kpi-value" id="savingsToLA">—</span>
+          </div>
+        </div>
+
+        <div class="chart-card savings-chart-card">
+          <canvas id="savingsChart" height="220"></canvas>
+          <div class="savings-legend" id="savingsLegend"></div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="history-table" id="savingsTable">
+            <thead><tr><th>Date</th><th class="num">LA</th><th class="num">VIE</th><th class="num">DOCA</th><th class="num">Total</th><th></th></tr></thead>
+            <tbody id="savingsBody"></tbody>
+          </table>
+        </div>
+
+        <h2 class="section-title">Ajouter / mettre à jour un mois</h2>
+        <form id="savingsForm" class="form-card">
+          <label>Mois
+            <input type="month" id="savDate" required>
+          </label>
+          <div class="field-row">
+            <label>LA — Livret A (€)
+              <input type="number" id="savLA" step="1" placeholder="0">
+            </label>
+            <label>VIE — Assurance Vie (€)
+              <input type="number" id="savVIE" step="1" placeholder="0">
+            </label>
+            <label>DOCA — Épargne salariale (€)
+              <input type="number" id="savDOCA" step="1" placeholder="0">
+            </label>
+          </div>
+          <button type="submit" class="btn-secondary">Enregistrer ce mois</button>
+          <p class="hint" style="margin:0;">Si le mois existe déjà, il sera mis à jour plutôt que dupliqué.</p>
+        </form>
+      </section>
+
+    </main>
+
+    <footer class="app-footer">
+      <p>Vos données restent sur cet appareil (aucun serveur, aucun compte).</p>
+    </footer>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
