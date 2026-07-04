@@ -7,6 +7,41 @@
 const STORAGE_KEY = "cahierBudget_v1";
 const USER_NAME = "Alice";
 
+/* ---------------- Profils multiples ---------------- */
+const PROFILES_KEY = "oseille_profiles";
+const ACTIVE_PROFILE_KEY = "oseille_activeProfile";
+const DEFAULT_PROFILES = [
+  { id: "alice", name: "Alice" },
+  { id: "lucie", name: "Lucie" },
+];
+
+function getProfiles() {
+  try {
+    const raw = localStorage.getItem(PROFILES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* ignore */ }
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(DEFAULT_PROFILES));
+  return DEFAULT_PROFILES;
+}
+
+function getActiveProfileId() {
+  return localStorage.getItem(ACTIVE_PROFILE_KEY) || "alice";
+}
+
+function setActiveProfileId(id) {
+  localStorage.setItem(ACTIVE_PROFILE_KEY, id);
+}
+
+function storageKeyFor(profileId) {
+  return profileId === "alice" ? STORAGE_KEY : `cahierBudget_v1__${profileId}`;
+}
+
+function cloneDefaultCategories() {
+  return DEFAULT_CATEGORIES.map(c => ({ ...c }));
+}
+
+let activeProfileId = getActiveProfileId();
+
 const DEFAULT_CATEGORIES = [
   { id: "salaire", name: "Salaire", type: "income", budget: 0 },
   { id: "primes", name: "Primes / Dons", type: "income", budget: 0 },
@@ -41,13 +76,59 @@ const SEED_SAVINGS = [
   { date: "2026-07-01", la: 18620, vie: 20296, doca: 14014 },
 ];
 
-let state = loadState();
+let state = loadState(activeProfileId);
 let currentMonth = new Date();
 currentMonth.setDate(1);
 
-function loadState() {
+/* Profil de démonstration "Lucie" — données entièrement fictives, générées
+   pour illustrer le multi-profil (revenu stable et identique chaque mois). */
+const LUCIE_SEED_TRANSACTIONS = [
+  // Avril
+  { date: "2026-04-01", amount: 1900, categoryId: "salaire", note: "Salaire" },
+  { date: "2026-04-02", amount: -650, categoryId: "charges", note: "Loyer" },
+  { date: "2026-04-03", amount: -35.5, categoryId: "charges", note: "Assurance habitation" },
+  { date: "2026-04-04", amount: -13.99, categoryId: "charges", note: "Abonnement streaming" },
+  { date: "2026-04-06", amount: -62.4, categoryId: "courses", note: "Courses" },
+  { date: "2026-04-13", amount: -58.1, categoryId: "courses", note: "Courses" },
+  { date: "2026-04-20", amount: -49.9, categoryId: "courses", note: "Courses" },
+  { date: "2026-04-11", amount: -32.0, categoryId: "restaurants", note: "Restaurant" },
+  { date: "2026-04-18", amount: -70.0, categoryId: "voiture", note: "Essence" },
+  { date: "2026-04-22", amount: -25.0, categoryId: "sante", note: "Pharmacie" },
+  { date: "2026-04-25", amount: -45.0, categoryId: "plaisirs", note: "Sorties" },
+  // Mai
+  { date: "2026-05-01", amount: 1900, categoryId: "salaire", note: "Salaire" },
+  { date: "2026-05-02", amount: -650, categoryId: "charges", note: "Loyer" },
+  { date: "2026-05-03", amount: -35.5, categoryId: "charges", note: "Assurance habitation" },
+  { date: "2026-05-04", amount: -13.99, categoryId: "charges", note: "Abonnement streaming" },
+  { date: "2026-05-07", amount: -64.2, categoryId: "courses", note: "Courses" },
+  { date: "2026-05-14", amount: -55.8, categoryId: "courses", note: "Courses" },
+  { date: "2026-05-21", amount: -60.3, categoryId: "courses", note: "Courses" },
+  { date: "2026-05-16", amount: -28.5, categoryId: "restaurants", note: "Restaurant" },
+  { date: "2026-05-19", amount: -68.0, categoryId: "voiture", note: "Essence" },
+  { date: "2026-05-28", amount: -55.0, categoryId: "plaisirs", note: "Sorties" },
+  // Juin
+  { date: "2026-06-01", amount: 1900, categoryId: "salaire", note: "Salaire" },
+  { date: "2026-06-02", amount: -650, categoryId: "charges", note: "Loyer" },
+  { date: "2026-06-03", amount: -35.5, categoryId: "charges", note: "Assurance habitation" },
+  { date: "2026-06-04", amount: -13.99, categoryId: "charges", note: "Abonnement streaming" },
+  { date: "2026-06-08", amount: -59.9, categoryId: "courses", note: "Courses" },
+  { date: "2026-06-15", amount: -63.4, categoryId: "courses", note: "Courses" },
+  { date: "2026-06-22", amount: -57.2, categoryId: "courses", note: "Courses" },
+  { date: "2026-06-12", amount: -36.0, categoryId: "restaurants", note: "Restaurant" },
+  { date: "2026-06-20", amount: -72.0, categoryId: "voiture", note: "Essence" },
+  { date: "2026-06-25", amount: -30.0, categoryId: "sante", note: "Pharmacie" },
+  // Juillet
+  { date: "2026-07-01", amount: 1900, categoryId: "salaire", note: "Salaire" },
+  { date: "2026-07-02", amount: -650, categoryId: "charges", note: "Loyer" },
+  { date: "2026-07-03", amount: -35.5, categoryId: "charges", note: "Assurance habitation" },
+  { date: "2026-07-04", amount: -13.99, categoryId: "charges", note: "Abonnement streaming" },
+  { date: "2026-07-05", amount: -61.0, categoryId: "courses", note: "Courses" },
+];
+
+function loadState(profileId) {
+  const key = storageKeyFor(profileId);
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (!parsed.projects) parsed.projects = [];
@@ -57,18 +138,30 @@ function loadState() {
   } catch (e) {
     console.warn("Lecture des données impossible, redémarrage propre.", e);
   }
-  // Premier lancement : on pré-charge l'historique importé du fichier Excel.
-  const seeded = SEED_TRANSACTIONS.map(t => ({ ...t, id: uid() }));
+
+  if (profileId === "alice") {
+    // Premier lancement du profil Alice : historique importé du fichier Excel.
+    const seeded = SEED_TRANSACTIONS.map(t => ({ ...t, id: uid() }));
+    return {
+      categories: cloneDefaultCategories(),
+      transactions: seeded,
+      projects: [],
+      savings: SEED_SAVINGS.map(s => ({ ...s, id: uid() })),
+    };
+  }
+
+  // Autre profil (ex. Lucie) : jeu de données fictif de démonstration.
+  const seeded = LUCIE_SEED_TRANSACTIONS.map(t => ({ ...t, id: uid() }));
   return {
-    categories: DEFAULT_CATEGORIES,
+    categories: cloneDefaultCategories(),
     transactions: seeded,
     projects: [],
-    savings: SEED_SAVINGS.map(s => ({ ...s, id: uid() })),
+    savings: [],
   };
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(storageKeyFor(activeProfileId), JSON.stringify(state));
 }
 
 function uid() {
@@ -276,7 +369,8 @@ function renderDashboard() {
     .reduce((s, c) => s + c.budget, 0);
   const remainingBudget = totalBudget - expense;
   const greeting = document.getElementById("greetingText");
-  let msg = `<span class="greeting-name">Bonjour ${USER_NAME} !</span>`;
+  const activeProfileName = (getProfiles().find(p => p.id === activeProfileId) || {}).name || USER_NAME;
+  let msg = `<span class="greeting-name">Bonjour ${activeProfileName} !</span>`;
   if (saved > 0) {
     msg += `Tu as économisé ${money(saved)} ce mois-ci. `;
   } else if (expense > 0) {
@@ -949,9 +1043,208 @@ function renderMonthlyPivot() {
 
 document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
 
+/* ---------------- Import de relevé PDF ---------------- */
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+}
+
+const CATEGORY_KEYWORDS = [
+  { cat: "courses", words: ["carrefour", "cora ", "cora\n", "leclerc", "e.leclerc", "intermarche", "intermarché", "monoprix", "auchan", "lidl", "picard", "franprix", "casino", "grand frais"] },
+  { cat: "restaurants", words: ["mcdonald", "kfc", "restaurant", "pizza", "sushi", "uber", "deliveroo", "starbucks", "boulangerie", "paul ", "del arte", "creperie", "brasserie", "traiteur"] },
+  { cat: "charges", words: ["edf", "orange", "free mobile", "sfr", "bouygues", "loyer", "assurance", "netflix", "spotify", "disney", "apple.com", "cotisations bancaires", "frais bancaires", "macif", "bpce assurances", "abonnement"] },
+  { cat: "voiture", words: ["total", "esso", " bp ", "shell", "sncf", "navigo", "bip & go", "bip&go", "peage", "péage", "autoroute", "parking", "essence", "station", "certas", "sanef", "parcofrance"] },
+  { cat: "sante", words: ["pharmacie", "docteur", "clinique", "laboratoire", "mutuelle", "medecin", "médecin", "dentiste", "hopital", "hôpital"] },
+  { cat: "vetements", words: ["kiabi", "zara", "h&m", "zalando", "decathlon", "jj s house", "jjshouse", "gemo", "celio", "gap "] },
+  { cat: "plaisirs", words: ["cinema", "cinéma", "theatre", "théâtre", "concert", " bar ", "fnac", "loisirs", "spectacle"] },
+  { cat: "cadeaux", words: ["cadeau", "fleuriste", "bouquetiere", "bouquetière"] },
+  { cat: "amenagement", words: ["leroy merlin", "ikea", "castorama", "but ", "conforama", "brico"] },
+  { cat: "salaire", words: ["salaire", "paie ", "virement employeur"] },
+];
+
+function guessCategoryForImport(label, amount) {
+  const lower = label.toLowerCase();
+  for (const rule of CATEGORY_KEYWORDS) {
+    if (rule.words.some(w => lower.includes(w))) return rule.cat;
+  }
+  return amount > 0 ? "remboursements" : "charges";
+}
+
+async function extractLinesFromPdf(file) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const allLines = [];
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const content = await page.getTextContent();
+    const lineMap = new Map();
+    content.items.forEach(item => {
+      const y = Math.round(item.transform[5]);
+      const x = item.transform[4];
+      if (!lineMap.has(y)) lineMap.set(y, []);
+      lineMap.get(y).push({ x, text: item.str });
+    });
+    const sortedYs = [...lineMap.keys()].sort((a, b) => b - a);
+    sortedYs.forEach(y => allLines.push(lineMap.get(y).sort((a, b) => a.x - b.x)));
+  }
+  return allLines;
+}
+
+const DATE_LINE_RE = /^(\d{2})\/(\d{2})\/(\d{4})/;
+const AMOUNT_RE = /(-?\d[\d\s\u00A0]*,\d{2})\s*(?:€|EUR)/i;
+const NUMERIC_ITEM_RE = /\d,\d{2}/;
+
+function parseTransactionsFromLines(lines) {
+  let debitX = null, creditX = null;
+  for (const line of lines) {
+    const debitItem = line.find(it => /d[ée]bit/i.test(it.text));
+    const creditItem = line.find(it => /cr[ée]dit/i.test(it.text));
+    if (debitItem && creditItem) { debitX = debitItem.x; creditX = creditItem.x; break; }
+  }
+  const threshold = (debitX !== null && creditX !== null) ? (debitX + creditX) / 2 : null;
+
+  const results = [];
+  lines.forEach(line => {
+    const lineText = line.map(it => it.text).join(" ").replace(/\s+/g, " ").trim();
+    const dateMatch = lineText.match(DATE_LINE_RE);
+    if (!dateMatch) return;
+    const amountMatch = lineText.match(AMOUNT_RE);
+    if (!amountMatch) return;
+
+    const numericItems = line.filter(it => NUMERIC_ITEM_RE.test(it.text));
+    const amountItem = numericItems[numericItems.length - 1];
+    const isCredit = threshold !== null && amountItem && amountItem.x > threshold;
+
+    const value = parseFloat(amountMatch[1].replace(/[\s\u00A0]/g, "").replace(",", "."));
+    if (isNaN(value)) return;
+    const signedAmount = isCredit ? Math.abs(value) : -Math.abs(value);
+
+    let label = lineText.slice(dateMatch[0].length).replace(amountMatch[0], "").replace(/EUR\s*$/i, "").trim();
+    if (!label) label = "Opération";
+
+    const [, dd, mm, yyyy] = dateMatch;
+    results.push({ date: `${yyyy}-${mm}-${dd}`, note: label, amount: signedAmount });
+  });
+  return results;
+}
+
+let importPreviewData = [];
+
+async function handleImportFile(file) {
+  if (!file || file.type !== "application/pdf") {
+    alert("Merci de déposer un fichier PDF.");
+    return;
+  }
+  document.getElementById("importDropzoneText").textContent = "Lecture du PDF en cours…";
+  try {
+    const lines = await extractLinesFromPdf(file);
+    const parsed = parseTransactionsFromLines(lines);
+    if (parsed.length === 0) {
+      alert("Aucune opération détectée dans ce PDF. Le format n'est peut-être pas reconnu.");
+      document.getElementById("importDropzoneText").textContent = "Glisser un fichier PDF ici";
+      return;
+    }
+    importPreviewData = parsed.map(p => ({ ...p, categoryId: guessCategoryForImport(p.note, p.amount), include: true }));
+    renderImportPreview();
+  } catch (e) {
+    console.error(e);
+    alert("Impossible de lire ce PDF. Vérifie qu'il ne s'agit pas d'un scan (image) sans texte.");
+  }
+  document.getElementById("importDropzoneText").textContent = "Glisser un fichier PDF ici";
+}
+
+function renderImportPreview() {
+  document.getElementById("importPreviewWrap").style.display = "";
+  document.getElementById("importSummary").textContent =
+    `${importPreviewData.length} opération(s) détectée(s) — vérifie les catégories avant d'importer.`;
+
+  const body = document.getElementById("importPreviewBody");
+  body.innerHTML = importPreviewData.map((p, i) => {
+    const [y, m, d] = p.date.split("-");
+    const options = sortedCategories().map(c => `<option value="${c.id}" ${c.id === p.categoryId ? "selected" : ""}>${catLabel(c)}</option>`).join("");
+    return `
+      <tr>
+        <td><input type="checkbox" data-import-idx="${i}" ${p.include ? "checked" : ""}></td>
+        <td>${d}/${m}/${y}</td>
+        <td>${p.note}</td>
+        <td><select data-import-cat-idx="${i}">${options}</select></td>
+        <td class="num">${moneySigned(p.amount)}</td>
+      </tr>`;
+  }).join("");
+}
+
+document.getElementById("importPreviewBody").addEventListener("change", (e) => {
+  const idx = e.target.dataset.importIdx;
+  if (idx !== undefined) importPreviewData[idx].include = e.target.checked;
+  const catIdx = e.target.dataset.importCatIdx;
+  if (catIdx !== undefined) importPreviewData[catIdx].categoryId = e.target.value;
+});
+
+document.getElementById("importConfirmBtn").addEventListener("click", () => {
+  const toImport = importPreviewData.filter(p => p.include);
+  toImport.forEach(p => {
+    state.transactions.push({ id: uid(), date: p.date, amount: p.amount, categoryId: p.categoryId, note: p.note });
+  });
+  saveState();
+  renderAll();
+  document.getElementById("importPreviewWrap").style.display = "none";
+  document.getElementById("importFileInput").value = "";
+  alert(`${toImport.length} opération(s) importée(s) avec succès.`);
+});
+
+document.getElementById("importCancelBtn").addEventListener("click", () => {
+  importPreviewData = [];
+  document.getElementById("importPreviewWrap").style.display = "none";
+  document.getElementById("importFileInput").value = "";
+});
+
+document.getElementById("importChooseBtn").addEventListener("click", () => {
+  document.getElementById("importFileInput").click();
+});
+
+document.getElementById("importFileInput").addEventListener("change", (e) => {
+  if (e.target.files[0]) handleImportFile(e.target.files[0]);
+});
+
+const importDropzone = document.getElementById("importDropzone");
+["dragenter", "dragover"].forEach(evt => {
+  importDropzone.addEventListener(evt, (e) => { e.preventDefault(); importDropzone.classList.add("dragover"); });
+});
+["dragleave", "drop"].forEach(evt => {
+  importDropzone.addEventListener(evt, (e) => { e.preventDefault(); importDropzone.classList.remove("dragover"); });
+});
+importDropzone.addEventListener("drop", (e) => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleImportFile(file);
+});
+
 /* ---------------- Menu profil ---------------- */
+function renderProfileSwitcher() {
+  const profiles = getProfiles();
+  const active = profiles.find(p => p.id === activeProfileId) || profiles[0];
+
+  document.getElementById("profileAvatar").textContent = active.name.charAt(0).toUpperCase();
+  document.getElementById("profileNameLabel").textContent = active.name;
+
+  document.getElementById("profileSwitchList").innerHTML = profiles.map(p => `
+    <button type="button" class="profile-switch-item ${p.id === activeProfileId ? "active" : ""}" data-switch-profile="${p.id}">
+      <span class="profile-switch-avatar">${p.name.charAt(0).toUpperCase()}</span>
+      ${p.name}
+      ${p.id === activeProfileId ? '<span class="profile-switch-check">✓</span>' : ""}
+    </button>`).join("");
+}
+
+function switchProfile(profileId) {
+  if (profileId === activeProfileId) return;
+  activeProfileId = profileId;
+  setActiveProfileId(profileId);
+  state = loadState(activeProfileId);
+  renderProfileSwitcher();
+  renderAll();
+}
+
 document.getElementById("profileButton").addEventListener("click", (e) => {
   e.stopPropagation();
+  renderProfileSwitcher();
   document.getElementById("profileMenu").classList.toggle("open");
 });
 
@@ -960,6 +1253,12 @@ document.addEventListener("click", () => {
 });
 
 document.getElementById("profileMenu").addEventListener("click", (e) => {
+  const switchId = e.target.closest("[data-switch-profile]")?.dataset.switchProfile;
+  if (switchId) {
+    switchProfile(switchId);
+    document.getElementById("profileMenu").classList.remove("open");
+    return;
+  }
   const action = e.target.dataset.profileAction;
   if (!action) return;
   if (action === "logout") {
@@ -1001,6 +1300,7 @@ function unlockApp() {
   document.getElementById("appRoot").style.display = "";
   applyHideAmountsUI();
   applySidebarState();
+  renderProfileSwitcher();
   updateTopbarVisibility("dashboard");
   renderAll();
 }

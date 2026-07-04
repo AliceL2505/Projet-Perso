@@ -76,6 +76,9 @@ body {
 /* ---------- Logo Oseille (icône feuille d'oseille) ---------- */
 .paeonia-mark { display: inline-flex; flex-shrink: 0; }
 .paeonia-mark svg { display: block; }
+.oseille-icon-img { display: block; height: 32px; width: auto; }
+.lock-card .oseille-icon-img { height: 44px; }
+.oseille-wordmark-img { display: block; height: 44px; width: auto; margin-bottom: 4px; }
 
 /* ---------- Écran de verrouillage ---------- */
 .lock-screen {
@@ -298,6 +301,44 @@ body.hide-amounts input[data-saved-for]:focus {
 }
 .profile-menu button:hover { background: var(--sage-tint); }
 .profile-menu button[data-profile-action="logout"] { color: var(--danger); }
+.profile-menu-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+  margin: 8px 14px 4px;
+}
+.profile-menu-divider { height: 1px; background: var(--line); margin: 4px 0; }
+.profile-switch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.profile-switch-item:hover { background: var(--sage-tint); }
+.profile-switch-item.active { font-weight: 600; }
+.profile-switch-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--sage);
+  color: var(--btn-green-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.profile-switch-check { margin-left: auto; color: var(--sage-dim); }
 .sidebar.collapsed .profile-menu { left: 8px; }
 
 /* Sidebar repliée : icônes seules */
@@ -675,7 +716,9 @@ input:focus, select:focus {
   gap: 8px;
 }
 .import-dropzone p { margin: 0; font-size: 13px; }
-.import-dropzone button { opacity: 0.6; cursor: not-allowed; }
+.import-dropzone button { cursor: pointer; }
+.import-dropzone.dragover { border-color: var(--sage); background: var(--sage-tint); }
+#importPreviewBody select { max-width: 190px; }
 
 /* ---------- Catégories ---------- */
 .category-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 1200px; }
