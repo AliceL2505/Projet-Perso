@@ -226,7 +226,24 @@ function catLabel(cat) {
   return `${catEmoji(cat.id)} ${cat.name}`;
 }
 
-const PIE_COLORS = ["#8EA58B", "#A3B860", "#9B8AA6", "#D97A6C", "#A9C4A5", "#8FAF7A", "#B9A38C", "#7C9B8E", "#B5C98F", "#9FB4C7", "#CBB994", "#8B9DC3"];
+const PIE_COLORS = ["#B98593", "#9B8AA6", "#C9A66B", "#D97A6C", "#7C9BAE", "#E0A899", "#B9A38C", "#9FA8C9", "#CBB994", "#8B9DC3", "#C7A6C9", "#A98B7A"];
+const CATEGORY_COLORS = {
+  courses: "#B98593",
+  restaurants: "#D97A6C",
+  charges: "#C9A66B",
+  voiture: "#7C9BAE",
+  vacances: "#9B8AA6",
+  sante: "#B98D5E",
+  vetements: "#9FA8C9",
+  plaisirs: "#C7A6C9",
+  cadeaux: "#E0A899",
+  amenagement: "#A98B7A",
+  epargne: "#6E2C3B",
+  epargne_tf: "#8B9DC3",
+};
+function categoryColor(catId, fallbackIndex) {
+  return CATEGORY_COLORS[catId] || PIE_COLORS[fallbackIndex % PIE_COLORS.length];
+}
 
 /* ---------------- Navigation entre onglets ---------------- */
 const MONTH_SCOPED_TABS = ["dashboard", "history"];
@@ -369,23 +386,15 @@ function renderDashboard() {
     .reduce((s, c) => s + c.budget, 0);
   const remainingBudget = totalBudget - expense;
   const greeting = document.getElementById("greetingText");
-  const activeProfileName = (getProfiles().find(p => p.id === activeProfileId) || {}).name || USER_NAME;
-  let msg = `<span class="greeting-name">Bonjour ${activeProfileName} !</span>`;
-  if (saved > 0) {
-    msg += `Tu as économisé ${money(saved)} ce mois-ci. `;
-  } else if (expense > 0) {
-    msg += `Pas encore d'épargne enregistrée ce mois-ci. `;
-  } else {
-    msg += `Le mois démarre tout juste. `;
-  }
+  let msg;
   if (totalBudget > 0) {
-    msg += remainingBudget >= 0
-      ? `Il te reste ${money(remainingBudget)} avant ton budget prévu. Continue comme ça !`
+    msg = remainingBudget >= 0
+      ? `Continue comme ça ! Il te reste ${money(remainingBudget)} avant ton budget prévu.`
       : `Tu as dépassé ton budget prévu de ${money(-remainingBudget)} ce mois-ci.`;
   } else {
-    msg += `Continue comme ça !`;
+    msg = `Continue comme ça !`;
   }
-  greeting.innerHTML = msg;
+  greeting.textContent = msg;
 
   renderRecurringExpenses(income - expense);
 
@@ -466,7 +475,7 @@ function renderExpensePie(netByCat) {
   const total = rows.reduce((s, r) => s + r.spent, 0);
   const labels = rows.map(r => catLabel(r.cat));
   const data = rows.map(r => r.spent);
-  const colors = rows.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]);
+  const colors = rows.map((r, i) => categoryColor(r.cat.id, i));
 
   if (expenseChart) expenseChart.destroy();
   expenseChart = new Chart(canvas.getContext("2d"), {
@@ -604,7 +613,7 @@ function renderCategoryList() {
     row.innerHTML = `
       <span class="cname">${catLabel(cat)}</span>
       <span class="ctype">${cat.type === "income" ? "Revenu" : "Dépense"}</span>
-      ${cat.type === "expense" ? `<input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}">` : `<span></span>`}
+      ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
       <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
     `;
     list.appendChild(row);
@@ -829,8 +838,8 @@ function moneyRound(n) {
 }
 
 const SAVINGS_SERIES = [
-  { key: "la", label: "Livret A", color: "#8EA58B" },
-  { key: "vie", label: "Assurance Vie", color: "#C7D68A" },
+  { key: "la", label: "Livret A", color: "#7C9BAE" },
+  { key: "vie", label: "Assurance Vie", color: "#B98593" },
   { key: "doca", label: "Épargne salariale", color: "#9B8AA6" },
   { key: "total", label: "Total", color: "#2F3437" },
 ];
@@ -1419,12 +1428,11 @@ function unlockApp() {
 
 function applyHideAmountsUI() {
   document.body.classList.toggle("hide-amounts", hideAmounts);
-  document.getElementById("hideAmountsLabel").textContent = hideAmounts ? "Afficher les sommes" : "Masquer les sommes";
-  document.getElementById("toggleHideAmounts").classList.toggle("active", hideAmounts);
+  document.getElementById("toggleHideAmounts").checked = !hideAmounts;
 }
 
-document.getElementById("toggleHideAmounts").addEventListener("click", () => {
-  hideAmounts = !hideAmounts;
+document.getElementById("toggleHideAmounts").addEventListener("change", (e) => {
+  hideAmounts = !e.target.checked;
   sessionStorage.setItem("paeonia_hideAmounts", hideAmounts ? "1" : "0");
   applyHideAmountsUI();
   renderAll();
