@@ -131,6 +131,7 @@ body {
   gap: 14px;
 }
 .lock-card .paeonia-mark { margin-bottom: 4px; }
+.lock-wordmark-img { display: block; height: 46px; width: auto; margin-bottom: 6px; }
 .lock-card h1 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -143,7 +144,13 @@ body {
   text-align: center;
   margin-top: 8px;
 }
-.lock-card .btn-primary { align-self: center; margin-top: 4px; }
+.lock-card .btn-primary {
+  align-self: center;
+  margin-top: 4px;
+  background: var(--wine);
+  color: #fff;
+}
+.lock-card .btn-primary:hover { background: var(--wine-dim); }
 .lock-error { color: var(--danger); font-size: 12.5px; min-height: 14px; }
 
 /* ---------- Sidebar ---------- */
