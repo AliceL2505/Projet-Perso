@@ -385,6 +385,8 @@ function renderDashboard() {
     .filter(c => c.type === "expense" && c.budget > 0)
     .reduce((s, c) => s + c.budget, 0);
   const remainingBudget = totalBudget - expense;
+  const activeProfileName = (getProfiles().find(p => p.id === activeProfileId) || {}).name || USER_NAME;
+  document.getElementById("greetingName").textContent = `Bonjour ${activeProfileName} !`;
   const greeting = document.getElementById("greetingText");
   let msg;
   if (totalBudget > 0) {

@@ -27,11 +27,12 @@
   <!-- SIDEBAR -->
   <nav class="sidebar" id="tabs">
     <div class="sidebar-title">
-      <span class="oseille-mark"><span class="oseille-o">O<svg class="oseille-sprig" viewBox="0 0 24 24" fill="none"><path d="M12 15V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 7c-3 0-5-2-5-5 3 0 5 2 5 5Z" fill="currentColor" opacity="0.82"/><path d="M12 7c3 0 5-2 5-5-3 0-5 2-5 5Z" fill="currentColor"/></svg></span><span class="oseille-suffix tab-label">'seille</span></span>
-      <button type="button" id="sidebarCollapseBtn" class="sidebar-collapse-btn" aria-label="Réduire la barre latérale">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-      </button>
+      <img src="data:image/png;base64,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" alt="Oseille" class="sidebar-icon-img">
+      <span class="oseille-suffix tab-label">seille</span>
     </div>
+    <button type="button" id="sidebarCollapseBtn" class="sidebar-collapse-btn" aria-label="Réduire la barre latérale">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
     <button class="tab active" data-tab="dashboard"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg><span class="tab-label">Tableau de bord</span></button>
     <div class="sidebar-divider"></div>
     <p class="sidebar-group-label tab-label">Gestion</p>
@@ -44,13 +45,15 @@
     <button class="tab" data-tab="monthly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3.5 10h17"/></svg><span class="tab-label">Résumé mensuel</span></button>
     <button class="tab" data-tab="yearly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><rect x="7" y="12" width="2.6" height="8"/><rect x="12.7" y="7" width="2.6" height="13"/><rect x="18.4" y="15" width="2.6" height="5"/></svg><span class="tab-label">Comparatif annuel</span></button>
     <button class="tab" data-tab="savings"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg><span class="tab-label">Suivi épargne</span></button>
+    <div class="sidebar-divider"></div>
+    <p class="sidebar-group-label tab-label">Projection</p>
     <div class="sidebar-spacer"></div>
     <label class="amounts-switch-row">
-      <span class="tab-label amounts-switch-label">Afficher les montants</span>
       <span class="amounts-switch">
         <input type="checkbox" id="toggleHideAmounts" checked>
         <span class="amounts-switch-track"><span class="amounts-switch-knob"></span></span>
       </span>
+      <span class="tab-label amounts-switch-label">Afficher les montants</span>
     </label>
     <p class="sidebar-footnote tab-label">Vos données restent sur cet appareil.</p>
 
@@ -73,6 +76,7 @@
   <div class="main-col">
 
     <div class="greeting-banner" id="greetingBanner">
+      <p class="greeting-name" id="greetingName">Bonjour !</p>
       <p id="greetingText">Bonjour !</p>
     </div>
 
@@ -175,7 +179,7 @@
             <input type="text" id="txNote" placeholder="Ex : Déjeuner avec Owen">
           </label>
 
-          <button type="submit" class="btn-primary">Enregistrer l'opération</button>
+          <button type="submit" class="btn-primary btn-wine">Enregistrer l'opération</button>
           <p class="form-feedback" id="txFeedback"></p>
         </form>
 
