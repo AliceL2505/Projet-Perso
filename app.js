@@ -213,11 +213,11 @@ function sortedCategories() {
 }
 
 const CATEGORY_EMOJI = {
-  salaire: "💼", primes: "🎁", remboursements: "💸",
+  salaire: "💼", primes: "💰", remboursements: "💸",
   charges: "🏠", courses: "🛒", restaurants: "🍽️",
   plaisirs: "🎉", vacances: "🌴", vetements: "👗",
   sante: "💊", voiture: "🚗", owen: "🐾",
-  cadeaux: "🎀", amenagement: "🛋️", epargne: "🌱", epargne_tf: "🏛️",
+  cadeaux: "🎁", amenagement: "🛋️", epargne: "🌱", epargne_tf: "🏛️",
 };
 function catEmoji(id) {
   return CATEGORY_EMOJI[id] || "🔸";
@@ -226,7 +226,7 @@ function catLabel(cat) {
   return `${catEmoji(cat.id)} ${cat.name}`;
 }
 
-const PIE_COLORS = ["#8EA58B", "#A3B860", "#F3C78A", "#D97A6C", "#A9C4A5", "#8FAF7A", "#B9A38C", "#7C9B8E", "#B5C98F", "#9FB4C7", "#CBB994", "#8B9DC3"];
+const PIE_COLORS = ["#8EA58B", "#A3B860", "#9B8AA6", "#D97A6C", "#A9C4A5", "#8FAF7A", "#B9A38C", "#7C9B8E", "#B5C98F", "#9FB4C7", "#CBB994", "#8B9DC3"];
 
 /* ---------------- Navigation entre onglets ---------------- */
 const MONTH_SCOPED_TABS = ["dashboard", "history"];
@@ -402,12 +402,11 @@ function renderDashboard() {
       const spent = Math.max(0, -(netByCat[cat.id] || 0));
       const pct = Math.min(100, Math.round((spent / cat.budget) * 100));
       const realPct = Math.round((spent / cat.budget) * 100);
-      let cls = "ok";
-      if (realPct >= 100) cls = "over";
-      else if (realPct >= 80) cls = "warn";
+      const cls = realPct >= 100 ? "over" : "ok";
 
       const row = document.createElement("div");
-      row.className = "gauge-row";
+      row.className = "gauge-row gauge-row-clickable";
+      row.dataset.categoryId = cat.id;
       row.innerHTML = `
         <div class="gauge-top">
           <span class="gauge-name">${catLabel(cat)}</span>
@@ -554,7 +553,49 @@ function categoriesForManagementList() {
   return [...income, ...expense];
 }
 
+function computeReferenceMonthlyIncome() {
+  const currentIncome = transactionsForMonth(currentMonth).filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+  if (currentIncome > 0) return currentIncome;
+  const incomeByMonth = {};
+  state.transactions.forEach(t => {
+    if (t.amount > 0) {
+      const m = t.date.slice(0, 7);
+      incomeByMonth[m] = (incomeByMonth[m] || 0) + t.amount;
+    }
+  });
+  const months = Object.keys(incomeByMonth);
+  if (months.length === 0) return 0;
+  return months.reduce((s, m) => s + incomeByMonth[m], 0) / months.length;
+}
+
+function renderBudgetSummary() {
+  const totalBudgets = state.categories
+    .filter(c => c.type === "expense" && c.budget > 0)
+    .reduce((s, c) => s + c.budget, 0);
+  const income = computeReferenceMonthlyIncome();
+
+  const pct = income > 0 ? Math.round((totalBudgets / income) * 100) : 0;
+  const cappedPct = Math.min(100, pct);
+  document.getElementById("budgetSummaryFigures").textContent = `${money(totalBudgets)} / ${income > 0 ? money(income) : "—"}`;
+  const fill = document.getElementById("budgetSummaryFill");
+  fill.style.width = cappedPct + "%";
+  fill.className = "gauge-fill " + (pct >= 100 ? "over" : "ok");
+
+  const note = document.getElementById("budgetSummaryNote");
+  if (income <= 0) {
+    note.textContent = "Ajoute un revenu pour comparer tes budgets à tes rentrées d'argent.";
+    note.className = "gauge-pct";
+  } else if (pct >= 100) {
+    note.innerHTML = `Tes budgets dépassent tes revenus de ${money(totalBudgets - income)}.`;
+    note.className = "gauge-pct over-text";
+  } else {
+    note.textContent = `${pct}% de tes revenus mensuels sont alloués à un budget.`;
+    note.className = "gauge-pct";
+  }
+}
+
 function renderCategoryList() {
+  renderBudgetSummary();
   const list = document.getElementById("categoryList");
   list.innerHTML = "";
   categoriesForManagementList().forEach(cat => {
@@ -646,7 +687,7 @@ function renderHistory() {
       <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
       <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
       <td><input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
-      <td class="num">${moneySigned(t.amount)}</td>
+      <td class="num"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"></td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
   });
@@ -665,6 +706,9 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
     if (e.target.value) t.date = e.target.value;
   } else if (e.target.classList.contains("inline-note-input")) {
     t.note = e.target.value.trim();
+  } else if (e.target.classList.contains("inline-amount-input")) {
+    const val = parseFloat(e.target.value);
+    if (!isNaN(val)) t.amount = val;
   }
   saveState();
   renderHistory();
@@ -702,9 +746,7 @@ function renderProjects() {
   state.projects.forEach(p => {
     const pct = p.target > 0 ? Math.min(100, Math.round((p.saved / p.target) * 100)) : 0;
     const realPct = p.target > 0 ? Math.round((p.saved / p.target) * 100) : 0;
-    let cls = "ok";
-    if (realPct >= 100) cls = "over";
-    else if (realPct >= 80) cls = "warn";
+    const cls = "ok";
 
     let deadlineHtml = "";
     if (p.date) {
@@ -789,7 +831,7 @@ function moneyRound(n) {
 const SAVINGS_SERIES = [
   { key: "la", label: "Livret A", color: "#8EA58B" },
   { key: "vie", label: "Assurance Vie", color: "#C7D68A" },
-  { key: "doca", label: "Épargne salariale", color: "#F3C78A" },
+  { key: "doca", label: "Épargne salariale", color: "#9B8AA6" },
   { key: "total", label: "Total", color: "#2F3437" },
 ];
 let savingsVisibility = { la: true, vie: true, doca: true, total: true };
@@ -1042,6 +1084,76 @@ function renderMonthlyPivot() {
 }
 
 document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
+
+document.getElementById("gaugesContainer").addEventListener("click", (e) => {
+  const row = e.target.closest(".gauge-row-clickable");
+  if (!row) return;
+  const catId = row.dataset.categoryId;
+  const cat = catById(catId);
+  const txs = transactionsForMonth(currentMonth)
+    .filter(t => t.categoryId === catId)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  document.getElementById("gaugeModalTitle").textContent = cat ? catLabel(cat) : "Catégorie";
+  const list = document.getElementById("gaugeModalList");
+  list.innerHTML = txs.length
+    ? txs.map(t => `
+        <div class="mini-item">
+          <span>${t.note || "Sans note"}</span>
+          <span class="amt">${moneySigned(t.amount)}</span>
+        </div>`).join("")
+    : `<p class="empty-state">Aucune opération dans cette catégorie ce mois-ci.</p>`;
+
+  document.getElementById("gaugeModalOverlay").classList.add("open");
+});
+
+document.getElementById("gaugeModalClose").addEventListener("click", () => {
+  document.getElementById("gaugeModalOverlay").classList.remove("open");
+});
+
+document.getElementById("gaugeModalOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "gaugeModalOverlay") {
+    document.getElementById("gaugeModalOverlay").classList.remove("open");
+  }
+});
+
+/* ---------------- Export des tableaux (Excel / Image / PDF) ---------------- */
+function exportTableAsXLSX(tableId, filename) {
+  const table = document.getElementById(tableId);
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Export" });
+  XLSX.writeFile(wb, `${filename}.xlsx`);
+}
+
+async function exportTableAsImage(tableId, filename) {
+  const table = document.getElementById(tableId);
+  const canvas = await html2canvas(table, { backgroundColor: "#ffffff", scale: 2 });
+  const link = document.createElement("a");
+  link.download = `${filename}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+async function exportTableAsPDF(tableId, filename) {
+  const table = document.getElementById(tableId);
+  const canvas = await html2canvas(table, { backgroundColor: "#ffffff", scale: 2 });
+  const imgData = canvas.toDataURL("image/png");
+  const { jsPDF } = window.jspdf;
+  const orientation = canvas.width > canvas.height ? "landscape" : "portrait";
+  const pdf = new jsPDF({ orientation, unit: "pt", format: "a4" });
+  const pageWidth = pdf.internal.pageSize.getWidth() - 40;
+  const ratio = pageWidth / canvas.width;
+  pdf.addImage(imgData, "PNG", 20, 20, pageWidth, canvas.height * ratio);
+  pdf.save(`${filename}.pdf`);
+}
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".export-btn");
+  if (!btn) return;
+  const { export: type, table, name } = btn.dataset;
+  if (type === "xlsx") exportTableAsXLSX(table, name);
+  else if (type === "image") exportTableAsImage(table, name);
+  else if (type === "pdf") exportTableAsPDF(table, name);
+});
 
 /* ---------------- Import de relevé PDF ---------------- */
 if (window.pdfjsLib) {
