@@ -42,6 +42,49 @@ function cloneDefaultCategories() {
 
 let activeProfileId = getActiveProfileId();
 
+let kpi4Choice = localStorage.getItem("oseille_kpi4_choice") || "epargne";
+
+document.getElementById("kpi4Card").addEventListener("click", (e) => {
+  if (e.target.closest("[data-kpi4]")) return;
+  const menu = document.getElementById("kpi4Menu");
+  menu.querySelectorAll("[data-kpi4]").forEach(b => b.classList.toggle("active", b.dataset.kpi4 === kpi4Choice));
+  menu.classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#kpi4Card")) {
+    document.getElementById("kpi4Menu").classList.remove("open");
+  }
+});
+document.getElementById("kpi4Menu").addEventListener("click", (e) => {
+  const choice = e.target.dataset.kpi4;
+  if (!choice) return;
+  kpi4Choice = choice;
+  localStorage.setItem("oseille_kpi4_choice", choice);
+  document.getElementById("kpi4Menu").classList.remove("open");
+  renderDashboard();
+});
+
+/* ---------------- Système générique de pop-in (modales) ---------------- */
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+document.addEventListener("click", (e) => {
+  const closeBtn = e.target.closest(".modal-close");
+  if (closeBtn) {
+    const overlay = closeBtn.closest(".modal-overlay");
+    if (overlay) overlay.classList.remove("open");
+    return;
+  }
+  if (e.target.classList.contains("modal-overlay")) {
+    e.target.classList.remove("open");
+  }
+});
+
+document.getElementById("openTxModalCard").addEventListener("click", () => openModal("txModalOverlay"));
+document.getElementById("openImportModalCard").addEventListener("click", () => openModal("importModalOverlay"));
+document.getElementById("openCatModalCard").addEventListener("click", () => openModal("catModalOverlay"));
+document.getElementById("openProjectModalCard").addEventListener("click", () => openModal("projectModalOverlay"));
+
 const DEFAULT_CATEGORIES = [
   { id: "salaire", name: "Salaire", type: "income", budget: 0 },
   { id: "primes", name: "Primes / Dons", type: "income", budget: 0 },
@@ -133,6 +176,7 @@ function loadState(profileId) {
       const parsed = JSON.parse(raw);
       if (!parsed.projects) parsed.projects = [];
       if (!parsed.savings) parsed.savings = SEED_SAVINGS.map(s => ({ ...s, id: uid() }));
+      if (!parsed.savingsDevices) parsed.savingsDevices = [];
       return parsed;
     }
   } catch (e) {
@@ -147,6 +191,7 @@ function loadState(profileId) {
       transactions: seeded,
       projects: [],
       savings: SEED_SAVINGS.map(s => ({ ...s, id: uid() })),
+      savingsDevices: [],
     };
   }
 
@@ -157,6 +202,7 @@ function loadState(profileId) {
     transactions: seeded,
     projects: [],
     savings: [],
+    savingsDevices: [],
   };
 }
 
@@ -379,7 +425,15 @@ function renderDashboard() {
   animateKpi("kpiIncome", income, money);
   animateKpi("kpiExpense", expense, money);
   animateKpi("kpiRemaining", income - expense, moneySigned);
-  animateKpi("kpiSaved", saved, moneySigned);
+
+  const recurringTotal = detectRecurringExpenses().reduce((s, u) => s + u.amount, 0);
+  if (kpi4Choice === "recurring") {
+    document.getElementById("kpi4Label").textContent = "Prélèvements habituels à venir";
+    animateKpi("kpiSaved", -recurringTotal, money);
+  } else {
+    document.getElementById("kpi4Label").textContent = "Épargné ce mois";
+    animateKpi("kpiSaved", saved, moneySigned);
+  }
 
   const totalBudget = state.categories
     .filter(c => c.type === "expense" && c.budget > 0)
@@ -391,12 +445,12 @@ function renderDashboard() {
   let msg;
   if (totalBudget > 0) {
     msg = remainingBudget >= 0
-      ? `Continue comme ça ! Il te reste ${money(remainingBudget)} avant ton budget prévu.`
-      : `Tu as dépassé ton budget prévu de ${money(-remainingBudget)} ce mois-ci.`;
+      ? `Continue comme ça !<br>Il te reste ${money(remainingBudget)} avant ton budget prévu.`
+      : `Tu as dépassé ton budget prévu<br>de ${money(-remainingBudget)} ce mois-ci.`;
   } else {
     msg = `Continue comme ça !`;
   }
-  greeting.textContent = msg;
+  greeting.innerHTML = msg;
 
   renderRecurringExpenses(income - expense);
 
@@ -485,7 +539,20 @@ function renderExpensePie(netByCat) {
     data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: "#fff", borderWidth: 2 }] },
     options: {
       cutout: "62%",
-      plugins: { legend: { display: false }, tooltip: { enabled: !hideAmounts } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: !hideAmounts,
+          displayColors: false,
+          callbacks: {
+            title: (items) => labels[items[0].dataIndex],
+            label: (item) => {
+              const pct = Math.round((item.parsed / total) * 100);
+              return `${money(item.parsed)} (${pct}%)`;
+            },
+          },
+        },
+      },
       animation: { duration: 500 },
     },
   });
@@ -542,7 +609,10 @@ txForm.addEventListener("submit", (e) => {
 
   const feedback = document.getElementById("txFeedback");
   feedback.textContent = "Opération enregistrée ✓";
-  setTimeout(() => feedback.textContent = "", 2000);
+  setTimeout(() => {
+    feedback.textContent = "";
+    closeModal("txModalOverlay");
+  }, 900);
 
   txForm.reset();
   document.getElementById("txDate").valueAsDate = new Date();
@@ -607,31 +677,39 @@ function renderBudgetSummary() {
 
 function renderCategoryList() {
   renderBudgetSummary();
-  const list = document.getElementById("categoryList");
-  list.innerHTML = "";
-  categoriesForManagementList().forEach(cat => {
-    const row = document.createElement("div");
-    row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
-    row.innerHTML = `
-      <span class="cname">${catLabel(cat)}</span>
-      <span class="ctype">${cat.type === "income" ? "Revenu" : "Dépense"}</span>
-      ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
-      <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
-    `;
-    list.appendChild(row);
-  });
+  const all = categoriesForManagementList();
+  const income = all.filter(c => c.type === "income");
+  const expense = all.filter(c => c.type === "expense");
+
+  function renderInto(containerId, cats) {
+    const list = document.getElementById(containerId);
+    list.innerHTML = "";
+    cats.forEach(cat => {
+      const row = document.createElement("div");
+      row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
+      row.innerHTML = `
+        <span class="cname">${catLabel(cat)}</span>
+        <span class="ctype">${cat.type === "income" ? "Revenu" : "Dépense"}</span>
+        ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
+        <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
+      `;
+      list.appendChild(row);
+    });
+  }
+  renderInto("categoryListIncome", income);
+  renderInto("categoryListExpense", expense);
 }
 
-document.getElementById("categoryList").addEventListener("change", (e) => {
+function handleCategoryListChange(e) {
   const id = e.target.dataset.budgetFor;
   if (!id) return;
   const cat = catById(id);
   cat.budget = parseFloat(e.target.value) || 0;
   saveState();
   renderDashboard();
-});
+}
 
-document.getElementById("categoryList").addEventListener("click", (e) => {
+function handleCategoryListClick(e) {
   const id = e.target.dataset.deleteCat;
   if (!id) return;
   const cat = catById(id);
@@ -642,7 +720,12 @@ document.getElementById("categoryList").addEventListener("click", (e) => {
   renderCategoryList();
   renderCategorySelect();
   renderDashboard();
-});
+}
+
+document.getElementById("categoryListIncome").addEventListener("change", handleCategoryListChange);
+document.getElementById("categoryListExpense").addEventListener("change", handleCategoryListChange);
+document.getElementById("categoryListIncome").addEventListener("click", handleCategoryListClick);
+document.getElementById("categoryListExpense").addEventListener("click", handleCategoryListClick);
 
 const catForm = document.getElementById("catForm");
 catForm.addEventListener("submit", (e) => {
@@ -657,6 +740,7 @@ catForm.addEventListener("submit", (e) => {
   renderCategoryList();
   renderCategorySelect();
   renderDashboard();
+  closeModal("catModalOverlay");
 });
 
 /* ---------------- Historique ---------------- */
@@ -754,7 +838,14 @@ function renderProjects() {
     return;
   }
 
-  state.projects.forEach(p => {
+  const sorted = [...state.projects].sort((a, b) => {
+    if (a.date && b.date) return a.date.localeCompare(b.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return 0;
+  });
+
+  sorted.forEach(p => {
     const pct = p.target > 0 ? Math.min(100, Math.round((p.saved / p.target) * 100)) : 0;
     const realPct = p.target > 0 ? Math.round((p.saved / p.target) * 100) : 0;
     const cls = "ok";
@@ -828,6 +919,7 @@ projectForm.addEventListener("submit", (e) => {
   saveState();
   projectForm.reset();
   renderProjects();
+  closeModal("projectModalOverlay");
 });
 
 /* ---------------- Suivi épargne (repère Excel) ---------------- */
@@ -847,8 +939,27 @@ const SAVINGS_SERIES = [
 ];
 let savingsVisibility = { la: true, vie: true, doca: true, total: true };
 
+function totalForSnapshot(s) {
+  const extraSum = s.extra ? Object.values(s.extra).reduce((a, b) => a + b, 0) : 0;
+  return s.la + s.vie + s.doca + extraSum;
+}
+
+function monthsBetween(d1, d2) {
+  const [y1, m1] = d1.split("-").map(Number);
+  const [y2, m2] = d2.split("-").map(Number);
+  return (y2 - y1) * 12 + (m2 - m1);
+}
+
+const DEVICE_COLORS = ["#C9A66B", "#B9A38C", "#8B9DC3", "#E0A899", "#C7A6C9", "#A98B7A"];
+
 function renderSavings() {
   const sorted = [...state.savings].sort((a, b) => a.date.localeCompare(b.date));
+  const devices = state.savingsDevices || [];
+
+  const headRow = document.getElementById("savingsTableHead");
+  headRow.innerHTML = `<tr><th>Date</th><th class="num">LA</th><th class="num">VIE</th><th class="num">DOCA</th>` +
+    devices.map(d => `<th class="num">${d.name}</th>`).join("") +
+    `<th class="num">Total</th><th></th></tr>`;
 
   const body = document.getElementById("savingsBody");
   body.innerHTML = "";
@@ -856,7 +967,7 @@ function renderSavings() {
     body.innerHTML = `<tr><td>Aucune donnée pour l'instant.</td></tr>`;
   } else {
     sorted.forEach(s => {
-      const total = s.la + s.vie + s.doca;
+      const total = totalForSnapshot(s);
       const [y, m] = s.date.split("-");
       const tr = document.createElement("tr");
       tr.innerHTML = `
@@ -864,6 +975,7 @@ function renderSavings() {
         <td class="num">${money(s.la)}</td>
         <td class="num">${money(s.vie)}</td>
         <td class="num">${money(s.doca)}</td>
+        ${devices.map(d => `<td class="num">${money((s.extra && s.extra[d.id]) || 0)}</td>`).join("")}
         <td class="num">${money(total)}</td>
         <td><button class="icon-btn" data-delete-saving="${s.id}" aria-label="Supprimer ce mois">✕</button></td>`;
       body.appendChild(tr);
@@ -877,8 +989,7 @@ function renderSavings() {
     const yearSnapshots = sorted.filter(s => s.date.startsWith(lastYear + "-"));
     const first = yearSnapshots[0];
     const last = yearSnapshots[yearSnapshots.length - 1];
-    const delta = (last.la + last.vie + last.doca) - (first.la + first.vie + first.doca);
-    ytdEl.textContent = moneySigned(delta);
+    ytdEl.textContent = moneySigned(totalForSnapshot(last) - totalForSnapshot(first));
   } else {
     ytdEl.textContent = "—";
   }
@@ -891,11 +1002,35 @@ function renderSavings() {
     .reduce((s, t) => s - t.amount, 0);
   laEl.textContent = money(toLA);
 
+  // Projection sur le reste de l'année, basée sur les 12 derniers mois disponibles
+  const projEl = document.getElementById("savingsProjection");
+  let projectedMonths = []; // valeurs projetées (une par mois restant de l'année en cours)
+  if (sorted.length >= 2) {
+    const window = sorted.slice(-12);
+    const first = window[0], last = window[window.length - 1];
+    const span = monthsBetween(first.date, last.date);
+    const avgDelta = span > 0 ? (totalForSnapshot(last) - totalForSnapshot(first)) / span : 0;
+    const lastYearNum = parseInt(last.date.slice(0, 4), 10);
+    const lastMonthNum = parseInt(last.date.slice(5, 7), 10);
+    const nowYear = new Date().getFullYear();
+    const remaining = lastYearNum === nowYear ? 12 - lastMonthNum : 0;
+    if (remaining > 0) {
+      const lastTotal = totalForSnapshot(last);
+      for (let i = 1; i <= remaining; i++) projectedMonths.push(lastTotal + avgDelta * i);
+      projEl.textContent = money(projectedMonths[projectedMonths.length - 1]);
+    } else {
+      projEl.textContent = sorted.length ? "Année déjà terminée" : "—";
+    }
+  } else {
+    projEl.textContent = "—";
+  }
+
   // Légende à cases à cocher
   const legend = document.getElementById("savingsLegend");
-  legend.innerHTML = SAVINGS_SERIES.map(s => `
+  const allSeries = SAVINGS_SERIES.concat(devices.map((d, i) => ({ key: d.id, label: d.name, color: DEVICE_COLORS[i % DEVICE_COLORS.length] })));
+  legend.innerHTML = allSeries.map(s => `
     <label>
-      <input type="checkbox" data-series="${s.key}" ${savingsVisibility[s.key] ? "checked" : ""}>
+      <input type="checkbox" data-series="${s.key}" ${savingsVisibility[s.key] !== false ? "checked" : ""}>
       <span class="legend-swatch" style="background:${s.color}"></span>
       ${s.label}
     </label>`).join("");
@@ -904,31 +1039,62 @@ function renderSavings() {
   if (savingsChart) { savingsChart.destroy(); savingsChart = null; }
 
   if (sorted.length > 0) {
-    const labels = sorted.map(s => {
+    const realLabels = sorted.map(s => {
       const [y, m] = s.date.split("-");
       return `${SAVINGS_MONTH_LABELS[parseInt(m, 10) - 1]} ${y.slice(2)}`;
     });
+    const projLabels = [];
+    if (projectedMonths.length > 0) {
+      const last = sorted[sorted.length - 1];
+      let [y, m] = last.date.split("-").map(Number);
+      for (let i = 0; i < projectedMonths.length; i++) {
+        m += 1;
+        projLabels.push(`${SAVINGS_MONTH_LABELS[m - 1]} ${String(y).slice(2)}`);
+      }
+    }
+    const labels = realLabels.concat(projLabels);
+    const pad = (arr) => arr.concat(Array(projLabels.length).fill(null));
+
     const dataByKey = {
-      la: sorted.map(s => s.la),
-      vie: sorted.map(s => s.vie),
-      doca: sorted.map(s => s.doca),
-      total: sorted.map(s => s.la + s.vie + s.doca),
+      la: pad(sorted.map(s => s.la)),
+      vie: pad(sorted.map(s => s.vie)),
+      doca: pad(sorted.map(s => s.doca)),
+      total: pad(sorted.map(s => totalForSnapshot(s))),
     };
+    devices.forEach(d => {
+      dataByKey[d.id] = pad(sorted.map(s => (s.extra && s.extra[d.id]) || 0));
+    });
+
+    const datasets = allSeries.map(s => ({
+      label: s.label,
+      data: dataByKey[s.key],
+      borderColor: s.color,
+      backgroundColor: s.color,
+      tension: 0.35,
+      pointRadius: 3,
+      borderWidth: s.key === "total" ? 2.5 : 2,
+      hidden: savingsVisibility[s.key] === false,
+    }));
+
+    if (projectedMonths.length > 0) {
+      const projectionData = Array(realLabels.length - 1).fill(null)
+        .concat([totalForSnapshot(sorted[sorted.length - 1])])
+        .concat(projectedMonths);
+      datasets.push({
+        label: "Projection",
+        data: projectionData,
+        borderColor: "#2F3437",
+        backgroundColor: "#2F3437",
+        borderDash: [6, 4],
+        tension: 0.35,
+        pointRadius: 3,
+        borderWidth: 2,
+      });
+    }
+
     savingsChart = new Chart(canvas.getContext("2d"), {
       type: "line",
-      data: {
-        labels,
-        datasets: SAVINGS_SERIES.map(s => ({
-          label: s.label,
-          data: dataByKey[s.key],
-          borderColor: s.color,
-          backgroundColor: s.color,
-          tension: 0.35,
-          pointRadius: 3,
-          borderWidth: s.key === "total" ? 2.5 : 2,
-          hidden: !savingsVisibility[s.key],
-        })),
-      },
+      data: { labels, datasets },
       options: {
         maintainAspectRatio: false,
         plugins: {
@@ -988,12 +1154,45 @@ savingsForm.addEventListener("submit", (e) => {
   renderSavings();
 });
 
+document.getElementById("openSavingsDeviceModalCard").addEventListener("click", () => openModal("savingsDeviceModalOverlay"));
+
+document.getElementById("savingsDeviceForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("savDeviceName").value.trim();
+  const amount = parseFloat(document.getElementById("savDeviceAmount").value) || 0;
+  if (!name) return;
+
+  const deviceId = uid();
+  state.savingsDevices = state.savingsDevices || [];
+  state.savingsDevices.push({ id: deviceId, name });
+
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  let snapshot = state.savings.find(s => s.date === date);
+  if (!snapshot) {
+    snapshot = { id: uid(), date, la: 0, vie: 0, doca: 0, extra: {} };
+    state.savings.push(snapshot);
+  }
+  if (!snapshot.extra) snapshot.extra = {};
+  snapshot.extra[deviceId] = amount;
+
+  saveState();
+  document.getElementById("savingsDeviceForm").reset();
+  renderSavings();
+  closeModal("savingsDeviceModalOverlay");
+});
+
 /* ---------------- Comparatif annuel (repère Excel) ---------------- */
 function monthsWithDataInYear(year) {
   const set = new Set();
   state.transactions.forEach(t => { if (t.date.startsWith(year + "-")) set.add(t.date.slice(0, 7)); });
   return set.size || 1;
 }
+
+let yearlyFilter = "all";
+let yearlySort = "default";
+let yearlyView = "table";
+let yearlyChart = null;
 
 function renderYearlyComparison() {
   const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
@@ -1013,15 +1212,27 @@ function renderYearlyComparison() {
     return;
   }
 
-  sortedCategories().forEach(cat => {
+  let rows = sortedCategories().map(cat => {
     const avgs = years.map(y => {
       const total = state.transactions
         .filter(t => t.categoryId === cat.id && t.date.startsWith(y + "-"))
         .reduce((s, t) => s + t.amount, 0);
       return total / monthsWithDataInYear(y);
     });
-    if (avgs.every(v => v === 0)) return;
+    return { cat, avgs };
+  }).filter(r => !r.avgs.every(v => v === 0));
 
+  if (yearlyFilter !== "all") rows = rows.filter(r => r.cat.type === yearlyFilter);
+
+  if (yearlySort === "name") {
+    rows.sort((a, b) => a.cat.name.localeCompare(b.cat.name, "fr"));
+  } else if (yearlySort === "total-desc") {
+    rows.sort((a, b) => Math.abs(b.avgs[b.avgs.length - 1]) - Math.abs(a.avgs[a.avgs.length - 1]));
+  } else if (yearlySort === "total-asc") {
+    rows.sort((a, b) => Math.abs(a.avgs[a.avgs.length - 1]) - Math.abs(b.avgs[b.avgs.length - 1]));
+  }
+
+  rows.forEach(({ cat, avgs }) => {
     const hasEnvelope = cat.type === "expense" && cat.budget > 0;
     let row = `<td class="sticky-col">${catLabel(cat)}</td>`;
     avgs.forEach((v, i) => {
@@ -1037,10 +1248,46 @@ function renderYearlyComparison() {
     tr.innerHTML = row;
     body.appendChild(tr);
   });
+
+  renderYearlyChart(years, rows);
+}
+
+function renderYearlyChart(years, rows) {
+  const canvas = document.getElementById("yearlyChart");
+  if (yearlyChart) { yearlyChart.destroy(); yearlyChart = null; }
+  if (yearlyView !== "chart") return;
+
+  const datasets = rows.map((r, i) => ({
+    label: catLabel(r.cat),
+    data: r.avgs.map(v => Math.abs(v)),
+    borderColor: categoryColor(r.cat.id, i),
+    backgroundColor: categoryColor(r.cat.id, i),
+    tension: 0.3,
+    pointRadius: 3,
+  }));
+
+  yearlyChart = new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: { labels: years, datasets },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 10, font: { family: "Inter" }, usePointStyle: true } },
+        tooltip: { enabled: !hideAmounts, callbacks: { label: (item) => `${item.dataset.label} : ${money(item.parsed.y)}` } },
+      },
+      scales: {
+        y: { ticks: { display: !hideAmounts, callback: v => money(v) }, grid: { display: false } },
+        x: { grid: { display: false } },
+      },
+    },
+  });
 }
 
 /* ---------------- Résumé mensuel (repère Excel) ---------------- */
 const MONTH_SHORT = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+
+let monthlyFilter = "all";
+let monthlySort = "default";
 
 function renderMonthlyPivot() {
   const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
@@ -1068,7 +1315,7 @@ function renderMonthlyPivot() {
     return;
   }
 
-  sortedCategories().forEach(cat => {
+  let rows = sortedCategories().map(cat => {
     const monthTotals = Array(12).fill(0);
     state.transactions.forEach(t => {
       if (t.categoryId === cat.id && t.date.startsWith(year + "-")) {
@@ -1076,8 +1323,20 @@ function renderMonthlyPivot() {
       }
     });
     const total = monthTotals.reduce((a, b) => a + b, 0);
-    if (total === 0 && monthTotals.every(v => v === 0)) return;
+    return { cat, monthTotals, total };
+  }).filter(r => !(r.total === 0 && r.monthTotals.every(v => v === 0)));
 
+  if (monthlyFilter !== "all") rows = rows.filter(r => r.cat.type === monthlyFilter);
+
+  if (monthlySort === "name") {
+    rows.sort((a, b) => a.cat.name.localeCompare(b.cat.name, "fr"));
+  } else if (monthlySort === "total-desc") {
+    rows.sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
+  } else if (monthlySort === "total-asc") {
+    rows.sort((a, b) => Math.abs(a.total) - Math.abs(b.total));
+  }
+
+  rows.forEach(({ cat, monthTotals, total }) => {
     const hasEnvelope = cat.type === "expense" && cat.budget > 0;
     let row = `<td class="sticky-col">${catLabel(cat)}</td>`;
     monthTotals.forEach(v => {
@@ -1095,6 +1354,71 @@ function renderMonthlyPivot() {
 }
 
 document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
+
+/* ---------------- Menus déroulants génériques (filtrer / trier / exporter / vue) ---------------- */
+document.querySelectorAll("[data-toggle-menu]").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const menu = document.getElementById(btn.dataset.toggleMenu);
+    const wasOpen = menu.classList.contains("open");
+    document.querySelectorAll(".dropdown-menu.open").forEach(m => m.classList.remove("open"));
+    if (!wasOpen) menu.classList.add("open");
+  });
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".dropdown-wrap")) {
+    document.querySelectorAll(".dropdown-menu.open").forEach(m => m.classList.remove("open"));
+  }
+});
+
+function wireFilterSort(prefix, getSet) {
+  document.getElementById(`${prefix}FilterMenu`).addEventListener("click", (e) => {
+    const val = e.target.dataset.filter;
+    if (!val) return;
+    getSet.setFilter(val);
+    document.querySelectorAll(`#${prefix}FilterMenu button`).forEach(b => b.classList.toggle("active", b.dataset.filter === val));
+    document.getElementById(`${prefix}FilterMenu`).classList.remove("open");
+    getSet.render();
+  });
+  document.getElementById(`${prefix}SortMenu`).addEventListener("click", (e) => {
+    const val = e.target.dataset.sort;
+    if (!val) return;
+    getSet.setSort(val);
+    document.querySelectorAll(`#${prefix}SortMenu button`).forEach(b => b.classList.toggle("active", b.dataset.sort === val));
+    document.getElementById(`${prefix}SortMenu`).classList.remove("open");
+    getSet.render();
+  });
+  document.getElementById(`${prefix}ResetBtn`).addEventListener("click", () => {
+    getSet.setFilter("all");
+    getSet.setSort("default");
+    document.querySelectorAll(`#${prefix}FilterMenu button`).forEach(b => b.classList.toggle("active", b.dataset.filter === "all"));
+    document.querySelectorAll(`#${prefix}SortMenu button`).forEach(b => b.classList.toggle("active", b.dataset.sort === "default"));
+    getSet.render();
+  });
+}
+
+wireFilterSort("yearly", {
+  setFilter: (v) => { yearlyFilter = v; },
+  setSort: (v) => { yearlySort = v; },
+  render: renderYearlyComparison,
+});
+wireFilterSort("monthly", {
+  setFilter: (v) => { monthlyFilter = v; },
+  setSort: (v) => { monthlySort = v; },
+  render: renderMonthlyPivot,
+});
+
+document.getElementById("yearlyViewMenu").addEventListener("click", (e) => {
+  const val = e.target.dataset.view;
+  if (!val) return;
+  yearlyView = val;
+  document.querySelectorAll("#yearlyViewMenu button").forEach(b => b.classList.toggle("active", b.dataset.view === val));
+  document.querySelector('[data-toggle-menu="yearlyViewMenu"]').textContent = "Vue : " + (val === "table" ? "Tableau" : "Courbes");
+  document.getElementById("yearlyTableWrap").style.display = val === "table" ? "" : "none";
+  document.getElementById("yearlyChartWrap").style.display = val === "chart" ? "" : "none";
+  document.getElementById("yearlyViewMenu").classList.remove("open");
+  renderYearlyComparison();
+});
 
 document.getElementById("gaugesContainer").addEventListener("click", (e) => {
   const row = e.target.closest(".gauge-row-clickable");
@@ -1164,6 +1488,8 @@ document.addEventListener("click", (e) => {
   if (type === "xlsx") exportTableAsXLSX(table, name);
   else if (type === "image") exportTableAsImage(table, name);
   else if (type === "pdf") exportTableAsPDF(table, name);
+  const menu = btn.closest(".dropdown-menu");
+  if (menu) menu.classList.remove("open");
 });
 
 /* ---------------- Import de relevé PDF ---------------- */
@@ -1311,6 +1637,7 @@ document.getElementById("importConfirmBtn").addEventListener("click", () => {
   renderAll();
   document.getElementById("importPreviewWrap").style.display = "none";
   document.getElementById("importFileInput").value = "";
+  closeModal("importModalOverlay");
   alert(`${toImport.length} opération(s) importée(s) avec succès.`);
 });
 
