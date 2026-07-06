@@ -247,6 +247,7 @@ body {
 .sidebar-spacer { flex: 1; }
 .amounts-switch-row {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   flex-wrap: nowrap;
