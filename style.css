@@ -174,8 +174,8 @@ body {
   margin-bottom: 32px;
   padding: 0 8px;
 }
-.sidebar-wordmark-img { display: block; height: 34px; width: auto; }
-.sidebar-icon-img { display: none; height: 30px; width: auto; flex-shrink: 0; }
+.sidebar-wordmark-img { display: block; height: 42px; width: auto; }
+.sidebar-icon-img { display: none; height: 36px; width: auto; flex-shrink: 0; }
 .sidebar.collapsed .sidebar-wordmark-img { display: none; }
 .sidebar.collapsed .sidebar-icon-img { display: block; }
 .sidebar-title { overflow: hidden; }
@@ -395,7 +395,7 @@ body.hide-amounts input[data-saved-for]:focus {
 .sidebar.collapsed { width: 76px; padding-left: 14px; padding-right: 14px; }
 .sidebar.collapsed .tab-label { display: none; }
 .sidebar.collapsed .tab { justify-content: center; padding: 11px; }
-.sidebar.collapsed .sidebar-title { justify-content: flex-start; padding: 0; width: 28px; }
+.sidebar.collapsed .sidebar-title { justify-content: flex-start; padding: 0; width: 32px; }
 .sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
 .sidebar.collapsed { position: sticky; }
 
@@ -976,11 +976,15 @@ input:focus, select:focus {
   box-sizing: border-box;
 }
 .budget-input-wrap input[type=number] {
-  border: none;
+  all: unset;
+  box-sizing: border-box;
   padding: 6px 0;
   width: 100%;
   text-align: right;
   min-width: 0;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  color: var(--ink);
 }
 .budget-input-wrap input[type=number]:focus { outline: none; }
 .budget-input-wrap .unit { color: var(--ink-soft); font-size: 13px; flex-shrink: 0; }
@@ -1005,6 +1009,7 @@ input:focus, select:focus {
 }
 .history-header select { max-width: 220px; }
 .history-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.history-filters select { height: 42px; box-sizing: border-box; }
 .search-pill {
   display: flex;
   flex-direction: row !important;
@@ -1013,10 +1018,11 @@ input:focus, select:focus {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 0 12px;
+  height: 42px;
+  box-sizing: border-box;
   margin: 0;
   line-height: normal;
-  box-sizing: border-box;
   color: var(--ink-soft);
 }
 .search-pill input {
