@@ -64,14 +64,14 @@ document.getElementById("kpi4Menu").addEventListener("click", (e) => {
   renderDashboard();
 });
 
-document.getElementById("kpiSoldeInfoBtn").addEventListener("click", (e) => {
+document.getElementById("kpiSoldeInfoBtn")?.addEventListener("click", (e) => {
   e.stopPropagation();
   const solde = state.soldeCourant || { amount: 0, date: null };
   document.getElementById("soldeCourantAmount").value = solde.amount || 0;
   document.getElementById("soldeCourantDate").value = solde.date || "";
   document.getElementById("kpiSoldePopover").classList.toggle("open");
 });
-document.getElementById("soldeCourantSaveBtn").addEventListener("click", (e) => {
+document.getElementById("soldeCourantSaveBtn")?.addEventListener("click", (e) => {
   e.stopPropagation();
   const amount = parseFloat(document.getElementById("soldeCourantAmount").value) || 0;
   const date = document.getElementById("soldeCourantDate").value || null;
@@ -82,7 +82,7 @@ document.getElementById("soldeCourantSaveBtn").addEventListener("click", (e) => 
 });
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#kpi4Card")) {
-    document.getElementById("kpiSoldePopover").classList.remove("open");
+    document.getElementById("kpiSoldePopover")?.classList.remove("open");
   }
 });
 
@@ -476,16 +476,16 @@ function renderDashboard() {
   const soldeInfoBtn = document.getElementById("kpiSoldeInfoBtn");
   if (kpi4Choice === "recurring") {
     document.getElementById("kpi4Label").childNodes[0].textContent = "Prélèvements habituels à venir";
-    soldeInfoBtn.style.display = "none";
+    if (soldeInfoBtn) soldeInfoBtn.style.display = "none";
     animateKpi("kpiSaved", -recurringTotal, money);
   } else if (kpi4Choice === "solde") {
     document.getElementById("kpi4Label").childNodes[0].textContent = "Solde compte courant";
-    soldeInfoBtn.style.display = "";
+    if (soldeInfoBtn) soldeInfoBtn.style.display = "";
     const solde = state.soldeCourant || { amount: 0, date: null };
     animateKpi("kpiSaved", solde.amount, money);
   } else {
     document.getElementById("kpi4Label").childNodes[0].textContent = "Épargné ce mois";
-    soldeInfoBtn.style.display = "none";
+    if (soldeInfoBtn) soldeInfoBtn.style.display = "none";
     animateKpi("kpiSaved", saved, moneySigned);
   }
 
