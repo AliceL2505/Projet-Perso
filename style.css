@@ -283,7 +283,12 @@ body {
 .amounts-switch input:checked + .amounts-switch-track { background: #A77E87; }
 .amounts-switch input:checked + .amounts-switch-track .amounts-switch-knob { transform: translateX(18px); background: #fff; }
 .amounts-switch input:focus-visible + .amounts-switch-track { box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
-.sidebar.collapsed .amounts-switch-row { justify-content: center; padding: 8px; }
+.sidebar.collapsed .amounts-switch-row {
+  width: auto;
+  align-self: center;
+  justify-content: center;
+  padding: 8px;
+}
 
 /* Mode "sommes masquées" : on floute les champs pré-remplis avec de vrais montants */
 body.hide-amounts input[data-budget-for],
