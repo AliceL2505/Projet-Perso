@@ -226,6 +226,11 @@ function moneySigned(n) {
   return (n >= 0 ? "+" : "−") + money(n);
 }
 
+function moneyRemaining(n) {
+  if (hideAmounts) return "•••• €";
+  return (n < 0 ? "−" : "") + money(n);
+}
+
 function animateKpi(elId, targetValue, formatFn) {
   const el = document.getElementById(elId);
   const start = parseFloat(el.dataset.rawValue || "0");
@@ -439,7 +444,8 @@ function renderDashboard() {
 
   animateKpi("kpiIncome", income, money);
   animateKpi("kpiExpense", expense, money);
-  animateKpi("kpiRemaining", income - expense, moneySigned);
+  animateKpi("kpiRemaining", income - expense, moneyRemaining);
+  document.getElementById("kpiRemainingCard").classList.toggle("is-negative", (income - expense) < 0);
 
   const recurringTotal = detectRecurringExpenses().reduce((s, u) => s + u.amount, 0);
   if (kpi4Choice === "recurring") {
@@ -485,11 +491,11 @@ function renderDashboard() {
       const cls = realPct >= 100 ? "over" : "ok";
 
       const row = document.createElement("div");
-      row.className = "gauge-row gauge-row-clickable";
+      row.className = "gauge-row gauge-row-clickable" + (realPct >= 100 ? " gauge-row-over" : "");
       row.dataset.categoryId = cat.id;
       row.innerHTML = `
         <div class="gauge-top">
-          <span class="gauge-name">${catLabel(cat)}</span>
+          <span class="gauge-name">${realPct >= 100 ? "⚠️ " : ""}${catLabel(cat)}</span>
           <span class="gauge-figures">${money(spent)} / ${money(cat.budget)}</span>
         </div>
         <div class="gauge-track">
@@ -778,8 +784,15 @@ function escapeAttr(s) {
 function renderHistory() {
   renderHistoryFilterOptions();
   const filterValue = document.getElementById("historyFilter").value;
+  const searchValue = document.getElementById("historySearch").value.trim().toLowerCase();
   const txs = transactionsForMonth(currentMonth)
     .filter(t => filterValue === "all" || t.categoryId === filterValue)
+    .filter(t => {
+      if (!searchValue) return true;
+      const cat = catById(t.categoryId);
+      const haystack = `${t.note || ""} ${cat ? catLabel(cat) : ""}`.toLowerCase();
+      return haystack.includes(searchValue);
+    })
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const body = document.getElementById("historyBody");
@@ -803,6 +816,7 @@ function renderHistory() {
 }
 
 document.getElementById("historyFilter").addEventListener("change", renderHistory);
+document.getElementById("historySearch").addEventListener("input", renderHistory);
 
 document.getElementById("historyBody").addEventListener("change", (e) => {
   const txId = e.target.dataset.txId;
