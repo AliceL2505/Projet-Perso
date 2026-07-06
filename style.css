@@ -1007,18 +1007,20 @@ input:focus, select:focus {
 .history-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .search-pill {
   display: flex;
+  flex-direction: row !important;
   align-items: center;
   gap: 7px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 9px 12px;
+  padding: 10px 12px;
   color: var(--ink-soft);
 }
 .search-pill input {
   border: none;
   outline: none;
   background: transparent;
+  padding: 0;
   font-size: 13px;
   width: 150px;
   color: var(--ink);
