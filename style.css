@@ -413,12 +413,10 @@ body.hide-amounts input[data-saved-for]:focus {
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 12px;
-  padding-bottom: 0;
-  margin-bottom: 0;
-  border-bottom: none;
+  margin-bottom: 24px;
 }
 .topbar-sub {
   margin: 0;
@@ -483,7 +481,7 @@ body.hide-amounts input[data-saved-for]:focus {
 }
 
 /* ---------- KPIs ---------- */
-.page-header-row { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.page-header-row { margin-bottom: 14px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .greeting-banner {
   margin-bottom: 0;
 }
@@ -682,10 +680,10 @@ body.hide-amounts input[data-saved-for]:focus {
 .modal-close:hover { color: var(--ink); }
 
 .budget-summary-wine { background: #6E2C3B; border-color: #6E2C3B; }
-.budget-summary-wine .gauge-name, .budget-summary-wine .gauge-figures { color: #fff; }
-.budget-summary-wine .gauge-pct { color: rgba(255,255,255,0.8); }
+.budget-summary-wine .gauge-name, .budget-summary-wine .gauge-figures { color: #6E2C3B; }
+.budget-summary-wine .gauge-pct { color: #6E2C3B; }
 .budget-summary-wine .gauge-pct.over-text { color: #F3C78A; }
-.budget-summary-wine .gauge-track { background: rgba(255,255,255,0.25); }
+.budget-summary-wine .gauge-track { background: rgba(110,44,59,0.15); }
 
 /* ---------- Gauges (élément signature) ---------- */
 .gauges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 780px; }
@@ -1009,8 +1007,8 @@ input:focus, select:focus {
   gap: 7px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
   color: var(--ink-soft);
 }
 .search-pill input {
