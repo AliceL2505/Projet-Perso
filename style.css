@@ -1014,17 +1014,19 @@ input:focus, select:focus {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
+  margin: 0;
+  line-height: normal;
+  box-sizing: border-box;
   color: var(--ink-soft);
 }
 .search-pill input {
-  border: none;
-  outline: none;
-  background: transparent;
-  padding: 0;
+  all: unset;
+  box-sizing: border-box;
   font-size: 13px;
   width: 150px;
   color: var(--ink);
   font-family: var(--font-display);
+  cursor: text;
 }
 .search-pill svg { flex-shrink: 0; }
 .history-table {
