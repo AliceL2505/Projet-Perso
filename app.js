@@ -66,19 +66,10 @@ document.getElementById("kpi4Menu").addEventListener("click", (e) => {
 
 document.getElementById("kpiSoldeInfoBtn")?.addEventListener("click", (e) => {
   e.stopPropagation();
-  const solde = state.soldeCourant || { amount: 0, date: null };
-  document.getElementById("soldeCourantAmount").value = solde.amount || 0;
-  document.getElementById("soldeCourantDate").value = solde.date || "";
+  const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const infoText = document.getElementById("soldeInfoText");
+  if (infoText) infoText.textContent = `Solde calculé automatiquement à partir de l'ensemble de vos opérations enregistrées, au ${today}.`;
   document.getElementById("kpiSoldePopover").classList.toggle("open");
-});
-document.getElementById("soldeCourantSaveBtn")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  const amount = parseFloat(document.getElementById("soldeCourantAmount").value) || 0;
-  const date = document.getElementById("soldeCourantDate").value || null;
-  state.soldeCourant = { amount, date };
-  saveState();
-  document.getElementById("kpiSoldePopover").classList.remove("open");
-  renderDashboard();
 });
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#kpi4Card")) {
@@ -481,8 +472,8 @@ function renderDashboard() {
   } else if (kpi4Choice === "solde") {
     document.getElementById("kpi4Label").childNodes[0].textContent = "Solde compte courant";
     if (soldeInfoBtn) soldeInfoBtn.style.display = "";
-    const solde = state.soldeCourant || { amount: 0, date: null };
-    animateKpi("kpiSaved", solde.amount, money);
+    const totalAllTime = state.transactions.reduce((s, t) => s + t.amount, 0);
+    animateKpi("kpiSaved", totalAllTime, money);
   } else {
     document.getElementById("kpi4Label").childNodes[0].textContent = "Épargné ce mois";
     if (soldeInfoBtn) soldeInfoBtn.style.display = "none";
@@ -842,7 +833,7 @@ function renderHistory() {
       <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
       <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
       <td><input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
-      <td class="num"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"></td>
+      <td class="num"><span class="amount-cell"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"><span class="amount-suffix">€</span></span></td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
   });
@@ -1445,6 +1436,21 @@ function renderMonthlyPivot() {
     tr.innerHTML = row;
     body.appendChild(tr);
   });
+
+  if (rows.length) {
+    const grandMonthTotals = Array(12).fill(0);
+    rows.forEach(r => r.monthTotals.forEach((v, i) => { grandMonthTotals[i] += v; }));
+    const grandTotal = grandMonthTotals.reduce((a, b) => a + b, 0);
+    let totalRow = `<td class="sticky-col">Total général</td>`;
+    grandMonthTotals.forEach(v => {
+      totalRow += `<td class="num">${v === 0 ? "—" : moneySigned(v)}</td>`;
+    });
+    totalRow += `<td class="num">${moneySigned(grandTotal)}</td>`;
+    const trTotal = document.createElement("tr");
+    trTotal.className = "monthly-total-row";
+    trTotal.innerHTML = totalRow;
+    body.appendChild(trTotal);
+  }
 }
 
 document.getElementById("monthlyYearFilter").addEventListener("change", renderMonthlyPivot);
