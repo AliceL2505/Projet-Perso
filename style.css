@@ -256,25 +256,25 @@ body {
   cursor: pointer;
 }
 .amounts-switch-label { font-size: 12.5px; color: rgba(250,249,246,0.65); white-space: nowrap; }
-.amounts-switch { position: relative; display: inline-block; width: 34px; height: 19px; flex-shrink: 0; }
+.amounts-switch { position: relative; display: inline-block; width: 44px; height: 26px; flex-shrink: 0; }
 .amounts-switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
 .amounts-switch-track {
   position: absolute;
-  inset: 0;
-  background: rgba(250,249,246,0.25);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.18);
   border-radius: 999px;
   transition: background .15s ease;
 }
 .amounts-switch-knob {
   position: absolute;
-  top: 2px; left: 2px;
-  width: 15px; height: 15px;
-  background: rgba(250,249,246,0.8);
+  top: 4px; left: 4px;
+  width: 18px; height: 18px;
+  background: #fff;
   border-radius: 50%;
   transition: transform .15s ease;
 }
-.amounts-switch input:checked + .amounts-switch-track { background: rgba(250,249,246,0.4); }
-.amounts-switch input:checked + .amounts-switch-track .amounts-switch-knob { transform: translateX(15px); background: #fff; }
+.amounts-switch input:checked + .amounts-switch-track { background: #A77E87; }
+.amounts-switch input:checked + .amounts-switch-track .amounts-switch-knob { transform: translateX(18px); background: #fff; }
 .amounts-switch input:focus-visible + .amounts-switch-track { box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
 .sidebar.collapsed .amounts-switch-row { justify-content: center; padding: 8px; }
 
