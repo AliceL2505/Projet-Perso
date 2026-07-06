@@ -329,26 +329,29 @@ body.hide-amounts input[data-saved-for]:focus {
 .sidebar.collapsed .sidebar-profile { justify-content: center; padding-left: 0; padding-right: 0; }
 
 .profile-menu {
-  display: none;
   position: absolute;
   bottom: calc(100% + 6px);
-  left: 8px;
+  left: 0;
+  right: 0;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
   overflow: hidden;
-  min-width: 160px;
   z-index: 20;
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-height .28s cubic-bezier(.22,.9,.32,1), opacity .2s ease;
 }
-.profile-menu.open { display: block; }
+.profile-menu.open { max-height: 220px; opacity: 1; pointer-events: auto; }
 .profile-menu button {
   display: block;
   width: 100%;
   text-align: left;
   background: none;
   border: none;
-  padding: 10px 14px;
+  padding: 6px 14px;
   font-size: 13px;
   color: var(--ink);
   cursor: pointer;
@@ -386,7 +389,7 @@ body.hide-amounts input[data-saved-for]:focus {
   flex-shrink: 0;
 }
 .profile-switch-check { margin-left: auto; color: var(--wine-dim); }
-.sidebar.collapsed .profile-menu { left: 8px; }
+.sidebar.collapsed .profile-menu { left: 8px; right: auto; width: 180px; }
 
 /* Sidebar repliée : icônes seules */
 .sidebar.collapsed { width: 76px; padding-left: 14px; padding-right: 14px; }
