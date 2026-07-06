@@ -292,11 +292,27 @@ function categoryColor(catId, fallbackIndex) {
 }
 
 /* ---------------- Navigation entre onglets ---------------- */
-const MONTH_SCOPED_TABS = ["dashboard", "history"];
+const MONTH_SCOPED_TABS = ["dashboard", "add"];
+
+const TAB_TITLES = {
+  add: "Opérations",
+  categories: "Vos catégories",
+  projects: "Mes projets",
+  monthly: "Résumé mensuel",
+  yearly: "Comparatif annuel",
+  savings: "Suivi épargne",
+};
 
 function updateTopbarVisibility(tabName) {
   document.querySelector(".topbar").style.display = MONTH_SCOPED_TABS.includes(tabName) ? "" : "none";
   document.getElementById("greetingBanner").style.display = tabName === "dashboard" ? "" : "none";
+  const pageTitle = document.getElementById("pageTitle");
+  if (tabName === "dashboard") {
+    pageTitle.style.display = "none";
+  } else {
+    pageTitle.textContent = TAB_TITLES[tabName] || "";
+    pageTitle.style.display = "";
+  }
 }
 
 document.getElementById("tabs").addEventListener("click", (e) => {
@@ -307,7 +323,6 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   btn.classList.add("active");
   document.getElementById(`panel-${btn.dataset.tab}`).classList.add("active");
   updateTopbarVisibility(btn.dataset.tab);
-  if (btn.dataset.tab === "history") renderHistory();
   if (btn.dataset.tab === "yearly") renderYearlyComparison();
   if (btn.dataset.tab === "monthly") renderMonthlyPivot();
   if (btn.dataset.tab === "projects") renderProjects();
@@ -689,7 +704,6 @@ function renderCategoryList() {
       row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
       row.innerHTML = `
         <span class="cname">${catLabel(cat)}</span>
-        <span class="ctype">${cat.type === "income" ? "Revenu" : "Dépense"}</span>
         ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
         <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
       `;
@@ -1703,25 +1717,28 @@ document.addEventListener("click", () => {
 });
 
 document.getElementById("profileMenu").addEventListener("click", (e) => {
-  const switchId = e.target.closest("[data-switch-profile]")?.dataset.switchProfile;
-  if (switchId) {
-    switchProfile(switchId);
-    document.getElementById("profileMenu").classList.remove("open");
-    return;
-  }
   const action = e.target.dataset.profileAction;
   if (!action) return;
-  if (action === "logout") {
+  document.getElementById("profileMenu").classList.remove("open");
+  if (action === "switch-profile") {
+    renderProfileSwitcher();
+    openModal("profileSwitchModalOverlay");
+  } else if (action === "logout") {
     sessionStorage.removeItem(LOCK_SESSION_KEY);
-    document.getElementById("profileMenu").classList.remove("open");
     document.getElementById("appRoot").style.display = "none";
     document.getElementById("lockScreen").style.display = "flex";
     document.getElementById("lockInput").value = "";
     document.getElementById("lockInput").focus();
   } else {
-    document.getElementById("profileMenu").classList.remove("open");
     alert("Bientôt disponible.");
   }
+});
+
+document.getElementById("profileSwitchList").addEventListener("click", (e) => {
+  const switchId = e.target.closest("[data-switch-profile]")?.dataset.switchProfile;
+  if (!switchId) return;
+  switchProfile(switchId);
+  closeModal("profileSwitchModalOverlay");
 });
 
 /* ---------------- Barre latérale rétractable ---------------- */
