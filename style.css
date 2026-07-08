@@ -153,6 +153,144 @@ body {
 .lock-card .btn-primary:hover { background: var(--wine-dim); }
 .lock-error { color: var(--danger); font-size: 12.5px; min-height: 14px; }
 
+/* ---------- Onboarding "Faisons connaissance" ---------- */
+.onboarding-pill {
+  all: unset;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--wine);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background .15s ease, border-color .15s ease;
+}
+.onboarding-pill:hover { background: #F0EEE8; border-color: var(--wine); }
+
+.onboarding-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  padding: 40px 36px 32px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  position: relative;
+}
+.onboarding-progress {
+  height: 4px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  flex-shrink: 0;
+}
+.onboarding-progress span {
+  display: block;
+  height: 100%;
+  width: 14.28%;
+  background: var(--sage);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.onboarding-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+.onboarding-screen.active { display: flex; }
+.onboarding-emoji { font-size: 40px; line-height: 1; }
+.onboarding-screen h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  margin: 0;
+  color: var(--ink);
+}
+.onboarding-screen > p { margin: 0; color: var(--ink-soft); font-size: 13.5px; }
+.onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.onboarding-field input { text-align: left; }
+.onboarding-preview {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--wine);
+}
+.onboarding-checkbox {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 500;
+  cursor: pointer;
+}
+.onboarding-checkbox input { width: auto; accent-color: var(--wine); }
+.onboarding-radio-group, .onboarding-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.onboarding-radio, .onboarding-checkbox-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px !important;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s ease, border-color .15s ease;
+}
+.onboarding-radio:hover, .onboarding-checkbox-card:hover { background: var(--neutral-hover); }
+.onboarding-radio input, .onboarding-checkbox-card input { width: auto; accent-color: var(--wine); }
+.onboarding-radio:has(input:checked), .onboarding-checkbox-card:has(input:checked) {
+  border-color: var(--wine);
+  background: var(--wine-tint);
+}
+.onboarding-nav {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+.onboarding-nav .btn-secondary { flex: 1; }
+.onboarding-nav .btn-primary { flex: 1; background: var(--wine); color: #fff; }
+.onboarding-nav .btn-primary:hover { background: var(--wine-dim); }
+.onboarding-screen .btn-primary { background: var(--wine); color: #fff; width: 100%; }
+.onboarding-screen .btn-primary:hover { background: var(--wine-dim); }
+
 /* ---------- Sidebar ---------- */
 .sidebar {
   width: 232px;

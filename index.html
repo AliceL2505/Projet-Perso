@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=Lora:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-<link rel="stylesheet" href="style.css?v=20260708-3">
+<link rel="stylesheet" href="style.css?v=20260708-4">
 </head>
 <body>
 
@@ -20,7 +20,110 @@
     <input type="password" id="lockInput" placeholder="Mot de passe" autocomplete="off" required autofocus>
     <button type="submit" class="btn-primary">Déverrouiller</button>
     <p class="lock-error" id="lockError"></p>
+    <button type="button" id="onboardingStartBtn" class="onboarding-pill">🌱 Faisons connaissance</button>
   </form>
+</div>
+
+<div class="modal-overlay" id="onboardingOverlay">
+  <div class="onboarding-card">
+    <div class="onboarding-progress"><span id="onboardingProgressBar"></span></div>
+
+    <div class="onboarding-screen active" data-screen="1">
+      <div class="onboarding-emoji">🌱</div>
+      <h2>Bienvenue sur Oseille</h2>
+      <p>Une façon simple de comprendre où va votre argent, sans jugement.</p>
+      <button type="button" class="btn-primary onboarding-next">Commencer</button>
+    </div>
+
+    <div class="onboarding-screen" data-screen="2">
+      <div class="onboarding-emoji">👋</div>
+      <h2>Comment devons-nous vous appeler ?</h2>
+      <p>Comment souhaitez-vous apparaître dans Oseille ?</p>
+      <label class="onboarding-field">Prénom
+        <input type="text" id="onbFirstName" placeholder="Votre prénom" autocomplete="off">
+      </label>
+      <p class="onboarding-preview" id="onbNamePreview"></p>
+      <p class="hint">Ce prénom servira uniquement dans l'application.</p>
+      <div class="onboarding-nav">
+        <button type="button" class="btn-secondary onboarding-back">Retour</button>
+        <button type="button" class="btn-primary onboarding-next">Continuer</button>
+      </div>
+    </div>
+
+    <div class="onboarding-screen" data-screen="3">
+      <div class="onboarding-emoji">💰</div>
+      <h2>Votre revenu mensuel</h2>
+      <p>Quel est votre revenu mensuel net ?</p>
+      <label class="onboarding-field">Revenu net mensuel (€)
+        <input type="number" id="onbIncome" placeholder="2 250" min="0" step="1">
+      </label>
+      <label class="onboarding-checkbox">
+        <input type="checkbox" id="onbNoIncome">
+        Je préfère ne pas répondre
+      </label>
+      <p class="hint">Vous pourrez toujours le modifier plus tard.</p>
+      <div class="onboarding-nav">
+        <button type="button" class="btn-secondary onboarding-back">Retour</button>
+        <button type="button" class="btn-primary onboarding-next">Continuer</button>
+      </div>
+    </div>
+
+    <div class="onboarding-screen" data-screen="4">
+      <div class="onboarding-emoji">🏠</div>
+      <h2>Votre situation</h2>
+      <p>Laquelle vous correspond le mieux ?</p>
+      <div class="onboarding-radio-group" data-name="situation">
+        <label class="onboarding-radio"><input type="radio" name="onbSituation" value="seul"> Je vis seul(e)</label>
+        <label class="onboarding-radio"><input type="radio" name="onbSituation" value="couple"> En couple</label>
+        <label class="onboarding-radio"><input type="radio" name="onbSituation" value="coloc"> En colocation</label>
+        <label class="onboarding-radio"><input type="radio" name="onbSituation" value="parents"> Chez mes parents</label>
+        <label class="onboarding-radio"><input type="radio" name="onbSituation" value="autre"> Autre</label>
+      </div>
+      <div class="onboarding-nav">
+        <button type="button" class="btn-secondary onboarding-back">Retour</button>
+        <button type="button" class="btn-primary onboarding-next">Continuer</button>
+      </div>
+    </div>
+
+    <div class="onboarding-screen" data-screen="5">
+      <div class="onboarding-emoji">🏡</div>
+      <h2>Votre logement</h2>
+      <div class="onboarding-radio-group" data-name="logement">
+        <label class="onboarding-radio"><input type="radio" name="onbLogement" value="locataire"> Je suis locataire</label>
+        <label class="onboarding-radio"><input type="radio" name="onbLogement" value="proprietaire"> Je suis propriétaire</label>
+        <label class="onboarding-radio"><input type="radio" name="onbLogement" value="heberge"> Je suis hébergé(e)</label>
+      </div>
+      <div class="onboarding-nav">
+        <button type="button" class="btn-secondary onboarding-back">Retour</button>
+        <button type="button" class="btn-primary onboarding-next">Continuer</button>
+      </div>
+    </div>
+
+    <div class="onboarding-screen" data-screen="6">
+      <div class="onboarding-emoji">🎯</div>
+      <h2>Pourquoi utilisez-vous Oseille ?</h2>
+      <p>Choisissez une ou plusieurs réponses.</p>
+      <div class="onboarding-checkbox-group">
+        <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="comprendre"> Comprendre mes dépenses</label>
+        <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="economies"> Faire des économies</label>
+        <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="projet"> Préparer un projet</label>
+        <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="epargner"> Épargner davantage</label>
+        <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="budget"> Mieux gérer mon budget</label>
+        <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="curieux"> Je suis simplement curieux(se)</label>
+      </div>
+      <div class="onboarding-nav">
+        <button type="button" class="btn-secondary onboarding-back">Retour</button>
+        <button type="button" class="btn-primary onboarding-next">Continuer</button>
+      </div>
+    </div>
+
+    <div class="onboarding-screen" data-screen="7">
+      <div class="onboarding-emoji">🌱</div>
+      <h2 id="onbFinalGreeting">Bonjour 🌱</h2>
+      <p>Nous allons créer votre premier tableau de bord.</p>
+      <button type="button" class="btn-primary" id="onboardingFinishBtn">Découvrir Oseille</button>
+    </div>
+  </div>
 </div>
 
 <div class="layout" id="appRoot" style="display:none;">
@@ -569,6 +672,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=20260708-3"></script>
+<script src="app.js?v=20260708-4"></script>
 </body>
 </html>

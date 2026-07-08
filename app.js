@@ -13,12 +13,21 @@ const ACTIVE_PROFILE_KEY = "oseille_activeProfile";
 const DEFAULT_PROFILES = [
   { id: "alice", name: "Alice" },
   { id: "lucie", name: "Lucie" },
+  { id: "louise", name: "Louise" },
 ];
 
 function getProfiles() {
   try {
     const raw = localStorage.getItem(PROFILES_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      let changed = false;
+      DEFAULT_PROFILES.forEach(dp => {
+        if (!parsed.some(p => p.id === dp.id)) { parsed.push(dp); changed = true; }
+      });
+      if (changed) localStorage.setItem(PROFILES_KEY, JSON.stringify(parsed));
+      return parsed;
+    }
   } catch (e) { /* ignore */ }
   localStorage.setItem(PROFILES_KEY, JSON.stringify(DEFAULT_PROFILES));
   return DEFAULT_PROFILES;
@@ -182,6 +191,11 @@ const LUCIE_SEED_TRANSACTIONS = [
   { date: "2026-07-05", amount: -61.0, categoryId: "courses", note: "Courses" },
 ];
 
+const LOUISE_CATEGORIES = [{"id": "louise_salaire", "name": "Salaire", "type": "income", "budget": 0}, {"id": "louise_logement", "name": "Logement", "type": "expense", "budget": 850}, {"id": "louise_courses", "name": "Courses", "type": "expense", "budget": 270}, {"id": "louise_restaurant", "name": "Restaurant", "type": "expense", "budget": 120}, {"id": "louise_loisirs", "name": "Loisirs", "type": "expense", "budget": 90}, {"id": "louise_sport", "name": "Sport", "type": "expense", "budget": 0}, {"id": "louise_sante", "name": "Santé", "type": "expense", "budget": 40}, {"id": "louise_vetements", "name": "Vêtements", "type": "expense", "budget": 70}, {"id": "louise_beaute", "name": "Beauté", "type": "expense", "budget": 50}, {"id": "louise_transport", "name": "Transport", "type": "expense", "budget": 100}, {"id": "louise_vacances", "name": "Vacances", "type": "expense", "budget": 80}, {"id": "louise_cadeaux", "name": "Cadeaux", "type": "expense", "budget": 40}, {"id": "louise_telephone", "name": "Téléphone / Internet", "type": "expense", "budget": 40}, {"id": "louise_assurances", "name": "Assurances", "type": "expense", "budget": 60}, {"id": "louise_abonnements", "name": "Abonnements", "type": "expense", "budget": 35}, {"id": "louise_divers", "name": "Divers", "type": "expense", "budget": 55}, {"id": "louise_epargne", "name": "Épargne", "type": "expense", "budget": 380}];
+
+const LOUISE_SEED_TRANSACTIONS = [{"date": "2026-04-01", "amount": 2250, "categoryId": "louise_salaire", "note": "Salaire"}, {"date": "2026-04-01", "amount": -780, "categoryId": "louise_logement", "note": "Loyer"}, {"date": "2026-04-01", "amount": -62.0, "categoryId": "louise_logement", "note": "EDF"}, {"date": "2026-04-01", "amount": -16.8, "categoryId": "louise_assurances", "note": "Assurance habitation"}, {"date": "2026-04-01", "amount": -43.2, "categoryId": "louise_assurances", "note": "Mutuelle"}, {"date": "2026-04-01", "amount": -11.99, "categoryId": "louise_abonnements", "note": "Spotify"}, {"date": "2026-04-01", "amount": -19.99, "categoryId": "louise_telephone", "note": "Forfait mobile"}, {"date": "2026-04-01", "amount": -20.0, "categoryId": "louise_telephone", "note": "Box internet"}, {"date": "2026-04-01", "amount": -380, "categoryId": "louise_epargne", "note": "Virement épargne"}, {"date": "2026-04-01", "amount": -58.42, "categoryId": "louise_courses", "note": "Carrefour"}, {"date": "2026-04-01", "amount": -6.8, "categoryId": "louise_courses", "note": "Boulangerie"}, {"date": "2026-04-01", "amount": -34.1, "categoryId": "louise_courses", "note": "Carrefour"}, {"date": "2026-04-01", "amount": -42.0, "categoryId": "louise_transport", "note": "SNCF"}, {"date": "2026-04-01", "amount": -14.9, "categoryId": "louise_restaurant", "note": "McDonald's"}, {"date": "2026-04-01", "amount": -27.5, "categoryId": "louise_restaurant", "note": "Restaurant"}, {"date": "2026-04-01", "amount": -32.99, "categoryId": "louise_divers", "note": "Amazon"}, {"date": "2026-04-01", "amount": -46.0, "categoryId": "louise_sport", "note": "Decathlon"}, {"date": "2026-04-01", "amount": -28.9, "categoryId": "louise_beaute", "note": "Sephora"}, {"date": "2026-04-01", "amount": -12.0, "categoryId": "louise_loisirs", "note": "Cinéma"}, {"date": "2026-04-01", "amount": -39.9, "categoryId": "louise_vetements", "note": "Zara"}, {"date": "2026-05-01", "amount": 2250, "categoryId": "louise_salaire", "note": "Salaire"}, {"date": "2026-05-01", "amount": -780, "categoryId": "louise_logement", "note": "Loyer"}, {"date": "2026-05-01", "amount": -62.0, "categoryId": "louise_logement", "note": "EDF"}, {"date": "2026-05-01", "amount": -16.8, "categoryId": "louise_assurances", "note": "Assurance habitation"}, {"date": "2026-05-01", "amount": -43.2, "categoryId": "louise_assurances", "note": "Mutuelle"}, {"date": "2026-05-01", "amount": -11.99, "categoryId": "louise_abonnements", "note": "Spotify"}, {"date": "2026-05-01", "amount": -19.99, "categoryId": "louise_telephone", "note": "Forfait mobile"}, {"date": "2026-05-01", "amount": -20.0, "categoryId": "louise_telephone", "note": "Box internet"}, {"date": "2026-05-01", "amount": -380, "categoryId": "louise_epargne", "note": "Virement épargne"}, {"date": "2026-05-01", "amount": -61.2, "categoryId": "louise_courses", "note": "Carrefour"}, {"date": "2026-05-01", "amount": -7.3, "categoryId": "louise_courses", "note": "Boulangerie"}, {"date": "2026-05-01", "amount": -28.6, "categoryId": "louise_courses", "note": "Monoprix"}, {"date": "2026-05-01", "amount": -18.5, "categoryId": "louise_transport", "note": "Métro"}, {"date": "2026-05-01", "amount": -21.9, "categoryId": "louise_restaurant", "note": "Restaurant japonais"}, {"date": "2026-05-01", "amount": -15.6, "categoryId": "louise_loisirs", "note": "Piscine"}, {"date": "2026-05-01", "amount": -18.99, "categoryId": "louise_divers", "note": "Amazon"}, {"date": "2026-05-01", "amount": -30.0, "categoryId": "louise_cadeaux", "note": "Anniversaire copine"}, {"date": "2026-05-01", "amount": -22.0, "categoryId": "louise_beaute", "note": "Coiffeur"}, {"date": "2026-05-01", "amount": -49.9, "categoryId": "louise_vetements", "note": "H&M"}, {"date": "2026-06-01", "amount": 2250, "categoryId": "louise_salaire", "note": "Salaire"}, {"date": "2026-06-01", "amount": -780, "categoryId": "louise_logement", "note": "Loyer"}, {"date": "2026-06-01", "amount": -62.0, "categoryId": "louise_logement", "note": "EDF"}, {"date": "2026-06-01", "amount": -16.8, "categoryId": "louise_assurances", "note": "Assurance habitation"}, {"date": "2026-06-01", "amount": -43.2, "categoryId": "louise_assurances", "note": "Mutuelle"}, {"date": "2026-06-01", "amount": -11.99, "categoryId": "louise_abonnements", "note": "Spotify"}, {"date": "2026-06-01", "amount": -19.99, "categoryId": "louise_telephone", "note": "Forfait mobile"}, {"date": "2026-06-01", "amount": -20.0, "categoryId": "louise_telephone", "note": "Box internet"}, {"date": "2026-06-01", "amount": -380, "categoryId": "louise_epargne", "note": "Virement épargne"}, {"date": "2026-06-01", "amount": -55.8, "categoryId": "louise_courses", "note": "Carrefour"}, {"date": "2026-06-01", "amount": -6.8, "categoryId": "louise_courses", "note": "Boulangerie"}, {"date": "2026-06-01", "amount": -31.4, "categoryId": "louise_courses", "note": "Carrefour"}, {"date": "2026-06-01", "amount": -42.0, "categoryId": "louise_transport", "note": "SNCF"}, {"date": "2026-06-01", "amount": -16.5, "categoryId": "louise_transport", "note": "Métro"}, {"date": "2026-06-01", "amount": -14.9, "categoryId": "louise_restaurant", "note": "McDonald's"}, {"date": "2026-06-01", "amount": -25.0, "categoryId": "louise_loisirs", "note": "Escape game"}, {"date": "2026-06-01", "amount": -150.0, "categoryId": "louise_vacances", "note": "Acompte week-end Bordeaux"}, {"date": "2026-06-01", "amount": -19.9, "categoryId": "louise_sante", "note": "Pharmacie"}, {"date": "2026-06-01", "amount": -25.9, "categoryId": "louise_beaute", "note": "Sephora"}, {"date": "2026-07-01", "amount": 2250, "categoryId": "louise_salaire", "note": "Salaire"}, {"date": "2026-07-01", "amount": -780, "categoryId": "louise_logement", "note": "Loyer"}, {"date": "2026-07-01", "amount": -62.0, "categoryId": "louise_logement", "note": "EDF"}, {"date": "2026-07-01", "amount": -16.8, "categoryId": "louise_assurances", "note": "Assurance habitation"}, {"date": "2026-07-01", "amount": -43.2, "categoryId": "louise_assurances", "note": "Mutuelle"}, {"date": "2026-07-01", "amount": -11.99, "categoryId": "louise_abonnements", "note": "Spotify"}, {"date": "2026-07-01", "amount": -19.99, "categoryId": "louise_telephone", "note": "Forfait mobile"}, {"date": "2026-07-01", "amount": -20.0, "categoryId": "louise_telephone", "note": "Box internet"}, {"date": "2026-07-01", "amount": -380, "categoryId": "louise_epargne", "note": "Virement épargne"}, {"date": "2026-07-01", "amount": -58.42, "categoryId": "louise_courses", "note": "Carrefour"}, {"date": "2026-07-01", "amount": -6.8, "categoryId": "louise_courses", "note": "Boulangerie"}, {"date": "2026-07-01", "amount": -42.0, "categoryId": "louise_transport", "note": "SNCF"}, {"date": "2026-07-01", "amount": -14.9, "categoryId": "louise_restaurant", "note": "McDonald's"}, {"date": "2026-07-01", "amount": -32.99, "categoryId": "louise_divers", "note": "Amazon"}, {"date": "2026-07-01", "amount": -28.9, "categoryId": "louise_beaute", "note": "Sephora"}, {"date": "2026-07-01", "amount": -68.0, "categoryId": "louise_vacances", "note": "Solde week-end Bordeaux"}, {"date": "2026-07-01", "amount": -20.1, "categoryId": "louise_sante", "note": "Ostéopathe"}];
+
+
 function loadState(profileId) {
   const key = storageKeyFor(profileId);
   try {
@@ -217,6 +231,19 @@ function loadState(profileId) {
       savingsDevices: [],
       soldeCourant: { amount: 1239.64, date: "2026-07-06" },
       _seedVersion: SEED_DATA_VERSION,
+    };
+  }
+
+  if (profileId === "louise") {
+    // Profil de démonstration Louise : jeune active, budget serré mais équilibré.
+    const seeded = LOUISE_SEED_TRANSACTIONS.map(t => ({ ...t, id: uid() }));
+    return {
+      categories: LOUISE_CATEGORIES.map(c => ({ ...c })),
+      transactions: seeded,
+      projects: [],
+      savings: [],
+      savingsDevices: [],
+      soldeCourant: { amount: 0, date: null },
     };
   }
 
@@ -305,6 +332,12 @@ const CATEGORY_EMOJI = {
   plaisirs: "🎉", vacances: "🌴", vetements: "👗",
   sante: "💊", voiture: "🚗", owen: "🐾",
   cadeaux: "🎁", amenagement: "🛋️", epargne: "🌱", epargne_tf: "🏛️",
+  louise_salaire: "💼", louise_logement: "🏠", louise_courses: "🛒",
+  louise_restaurant: "🍽️", louise_loisirs: "🎉", louise_sport: "🏃",
+  louise_sante: "💊", louise_vetements: "👗", louise_beaute: "💄",
+  louise_transport: "🚌", louise_vacances: "🌴", louise_cadeaux: "🎁",
+  louise_telephone: "📱", louise_assurances: "🛡️", louise_abonnements: "📺",
+  louise_divers: "🔸", louise_epargne: "🌱",
 };
 function catEmoji(id) {
   return CATEGORY_EMOJI[id] || "🔸";
@@ -1935,3 +1968,72 @@ if (sessionStorage.getItem(LOCK_SESSION_KEY) === "1") {
     }
   });
 }
+
+/* ---------------- Onboarding "Faisons connaissance" ---------------- */
+const ONBOARDING_DONE_KEY = "oseille_onboarding_done";
+const ONBOARDING_DATA_KEY = "oseille_onboarding_data";
+const ONBOARDING_TOTAL_SCREENS = 7;
+let onboardingScreen = 1;
+
+function onboardingGoTo(n) {
+  onboardingScreen = Math.max(1, Math.min(ONBOARDING_TOTAL_SCREENS, n));
+  document.querySelectorAll(".onboarding-screen").forEach(el => {
+    el.classList.toggle("active", parseInt(el.dataset.screen, 10) === onboardingScreen);
+  });
+  document.getElementById("onboardingProgressBar").style.width =
+    Math.round((onboardingScreen / ONBOARDING_TOTAL_SCREENS) * 100) + "%";
+  if (onboardingScreen === 7) {
+    const name = document.getElementById("onbFirstName").value.trim();
+    document.getElementById("onbFinalGreeting").textContent = name ? `Bonjour ${name} 🌱` : "Bonjour 🌱";
+  }
+}
+
+const onboardingStartBtn = document.getElementById("onboardingStartBtn");
+if (localStorage.getItem(ONBOARDING_DONE_KEY) === "1" && onboardingStartBtn) {
+  onboardingStartBtn.style.display = "none";
+}
+
+if (onboardingStartBtn) {
+  onboardingStartBtn.addEventListener("click", () => {
+    onboardingGoTo(1);
+    document.getElementById("lockError").textContent = "";
+    openModal("onboardingOverlay");
+  });
+}
+
+document.getElementById("onbFirstName")?.addEventListener("input", (e) => {
+  const name = e.target.value.trim();
+  document.getElementById("onbNamePreview").textContent = name ? `Bonjour ${name} 👋` : "";
+});
+
+document.getElementById("onbNoIncome")?.addEventListener("change", (e) => {
+  const incomeInput = document.getElementById("onbIncome");
+  incomeInput.disabled = e.target.checked;
+  if (e.target.checked) incomeInput.value = "";
+});
+
+document.querySelectorAll(".onboarding-next").forEach(btn => {
+  btn.addEventListener("click", () => onboardingGoTo(onboardingScreen + 1));
+});
+document.querySelectorAll(".onboarding-back").forEach(btn => {
+  btn.addEventListener("click", () => onboardingGoTo(onboardingScreen - 1));
+});
+
+document.getElementById("onboardingFinishBtn")?.addEventListener("click", () => {
+  const firstName = document.getElementById("onbFirstName").value.trim();
+  const noIncome = document.getElementById("onbNoIncome").checked;
+  const income = noIncome ? null : (parseFloat(document.getElementById("onbIncome").value) || null);
+  const situation = document.querySelector('input[name="onbSituation"]:checked')?.value || null;
+  const logement = document.querySelector('input[name="onbLogement"]:checked')?.value || null;
+  const goals = [...document.querySelectorAll('input[name="onbGoal"]:checked')].map(el => el.value);
+
+  const data = { firstName, income, situation, logement, goals, completedAt: new Date().toISOString() };
+  try {
+    localStorage.setItem(ONBOARDING_DATA_KEY, JSON.stringify(data));
+    localStorage.setItem(ONBOARDING_DONE_KEY, "1");
+  } catch (e) { /* ignore */ }
+
+  closeModal("onboardingOverlay");
+  sessionStorage.setItem(LOCK_SESSION_KEY, "1");
+  unlockApp();
+});
