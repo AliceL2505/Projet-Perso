@@ -573,7 +573,7 @@ function renderDashboard() {
       row.dataset.categoryId = cat.id;
       row.innerHTML = `
         <div class="gauge-top">
-          <span class="gauge-name">${realPct >= 100 ? "⚠️ " : ""}${catLabel(cat)}</span>
+          <span class="gauge-name">${catLabel(cat)}</span>
           <span class="gauge-figures">${money(spent)} / ${money(cat.budget)}</span>
         </div>
         <div class="gauge-track">
