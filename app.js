@@ -233,7 +233,17 @@ function loadState(profileId) {
 }
 
 function saveState() {
+  state.lastModified = new Date().toISOString();
   localStorage.setItem(storageKeyFor(activeProfileId), JSON.stringify(state));
+  updateLastUpdateHint();
+}
+
+function updateLastUpdateHint() {
+  const el = document.getElementById("lastUpdateHint");
+  if (!el) return;
+  const d = state.lastModified ? new Date(state.lastModified) : new Date();
+  const formatted = d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  el.textContent = `Dernière actualisation : ${formatted}`;
 }
 
 function uid() {
@@ -374,6 +384,7 @@ document.getElementById("nextMonth").addEventListener("click", () => {
 function renderAll() {
   const label = currentMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   document.getElementById("monthDisplay").textContent = label;
+  updateLastUpdateHint();
   renderDashboard();
   renderCategorySelect();
   renderCategoryList();
@@ -482,8 +493,8 @@ function renderDashboard() {
   } else if (kpi4Choice === "solde") {
     document.getElementById("kpi4Label").childNodes[0].textContent = "Solde compte courant";
     if (soldeInfoBtn) soldeInfoBtn.style.display = "";
-    const totalAllTime = state.transactions.reduce((s, t) => s + t.amount, 0);
-    animateKpi("kpiSaved", totalAllTime, money);
+    const soldeCourant = computeMonthlyTrackingGrandTotal();
+    animateKpi("kpiSaved", soldeCourant, money);
   } else {
     document.getElementById("kpi4Label").childNodes[0].textContent = "Épargné ce mois";
     if (soldeInfoBtn) soldeInfoBtn.style.display = "none";
@@ -1383,6 +1394,19 @@ const MONTH_SHORT = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "
 
 let monthlyFilter = "all";
 let monthlySort = "default";
+
+// Reproduit exactement le total en bas à droite du tableau "Résumé mensuel" :
+// somme de toutes les opérations (toutes catégories confondues) de l'année la plus récente
+// présente dans les données. Utilisé pour que le "Solde compte courant" du tableau de bord
+// reste toujours identique à cette case, quel que soit le filtre affiché sur la page Résumé mensuel.
+function computeMonthlyTrackingGrandTotal() {
+  const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();
+  if (!years.length) return 0;
+  const latestYear = years[years.length - 1];
+  return state.transactions
+    .filter(t => t.date.startsWith(latestYear + "-"))
+    .reduce((s, t) => s + t.amount, 0);
+}
 
 function renderMonthlyPivot() {
   const years = [...new Set(state.transactions.map(t => t.date.slice(0, 4)))].sort();

@@ -488,6 +488,7 @@ body.hide-amounts input[data-saved-for]:focus {
 }
 .section-title:first-child { margin-top: 0; }
 .hint { color: var(--ink-soft); font-size: 13px; margin: -8px 0 18px; }
+.last-update-hint { margin: 0; white-space: nowrap; }
 .project-subtitle {
   font-family: var(--font-display);
   font-size: 15px;
