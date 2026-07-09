@@ -1192,6 +1192,9 @@ input:focus, select:focus {
 }
 .budget-input-wrap input[type=number] {
   all: unset;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   box-sizing: border-box;
   padding: 6px 0;
   width: 100%;
@@ -1247,6 +1250,9 @@ input:focus, select:focus {
 }
 .search-pill input {
   all: unset;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   box-sizing: border-box;
   font-size: 13px;
   width: 150px;
@@ -1280,6 +1286,9 @@ input:focus, select:focus {
 .row-income td.num { color: var(--success); }
 .inline-cat-select {
   all: unset;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   display: inline-flex;
   align-items: center;
   box-sizing: border-box;
@@ -1310,6 +1319,9 @@ input:focus, select:focus {
 .cat-pill-select:hover { background: #ECD5DA !important; }
 .inline-date-input, .inline-note-input, .inline-amount-input {
   all: unset;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   display: inline-flex;
   align-items: center;
   box-sizing: border-box;
