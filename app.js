@@ -1942,6 +1942,7 @@ function unlockApp() {
 function applyHideAmountsUI() {
   document.body.classList.toggle("hide-amounts", hideAmounts);
   document.getElementById("toggleHideAmounts").checked = !hideAmounts;
+  document.getElementById("amountsSwitchLabel").textContent = hideAmounts ? "Afficher les montants" : "Masquer les montants";
 }
 
 document.getElementById("toggleHideAmounts").addEventListener("change", (e) => {
