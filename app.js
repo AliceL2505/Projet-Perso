@@ -678,16 +678,32 @@ function renderCategorySelect() {
   const sign = document.querySelector('input[name="txSign"]:checked')?.value || "expense";
   const wantedType = sign === "income" ? "income" : "expense";
   select.innerHTML = "";
-  state.categories
-    .filter(cat => cat.type === wantedType)
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name, "fr"))
-    .forEach(cat => {
+
+  const byName = (a, b) => a.name.localeCompare(b.name, "fr");
+  const addOptions = (cats) => {
+    cats.forEach(cat => {
       const opt = document.createElement("option");
       opt.value = cat.id;
       opt.textContent = catLabel(cat);
       select.appendChild(opt);
     });
+  };
+
+  const mainCats = state.categories.filter(cat => cat.type === wantedType).slice().sort(byName);
+  addOptions(mainCats);
+
+  if (wantedType === "income") {
+    // Un remboursement peut aussi bien être rangé directement dans une catégorie de dépense.
+    const otherCats = state.categories.filter(cat => cat.type === "expense").slice().sort(byName);
+    if (otherCats.length) {
+      const separator = document.createElement("option");
+      separator.disabled = true;
+      separator.textContent = "──────────";
+      select.appendChild(separator);
+      addOptions(otherCats);
+    }
+  }
+
   if (prevValue && [...select.options].some(o => o.value === prevValue)) {
     select.value = prevValue;
   }
