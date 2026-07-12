@@ -592,7 +592,6 @@ function renderDashboard() {
       row.draggable = true;
       row.innerHTML = `
         <div class="gauge-top">
-          <span class="gauge-drag-handle" title="Glisser pour réorganiser" draggable="false">⠿⠿</span>
           <span class="gauge-name">${catLabel(cat)}</span>
           <span class="gauge-figures">${money(spent)} / ${money(cat.budget)}</span>
         </div>
@@ -1227,6 +1226,7 @@ projectForm.addEventListener("submit", (e) => {
 
 /* ---------------- Suivi épargne (repère Excel) ---------------- */
 let savingsChart = null;
+let savingsDatasetIndices = {};
 const SAVINGS_MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
 function moneyRound(n) {
@@ -1307,7 +1307,8 @@ function renderSavings() {
 
   // Projection sur le reste de l'année, basée sur les 12 derniers mois disponibles
   const projEl = document.getElementById("savingsProjection");
-  let projectedMonths = []; // valeurs projetées (une par mois restant de l'année en cours)
+  let projectedMonths = []; // valeurs projetées du TOTAL (une par mois restant de l'année en cours)
+  let remainingMonths = 0;
   if (sorted.length >= 2) {
     const window = sorted.slice(-12);
     const first = window[0], last = window[window.length - 1];
@@ -1316,16 +1317,31 @@ function renderSavings() {
     const lastYearNum = parseInt(last.date.slice(0, 4), 10);
     const lastMonthNum = parseInt(last.date.slice(5, 7), 10);
     const nowYear = new Date().getFullYear();
-    const remaining = lastYearNum === nowYear ? 12 - lastMonthNum : 0;
-    if (remaining > 0) {
+    remainingMonths = lastYearNum === nowYear ? 12 - lastMonthNum : 0;
+    if (remainingMonths > 0) {
       const lastTotal = totalForSnapshot(last);
-      for (let i = 1; i <= remaining; i++) projectedMonths.push(lastTotal + avgDelta * i);
+      for (let i = 1; i <= remainingMonths; i++) projectedMonths.push(lastTotal + avgDelta * i);
       projEl.textContent = money(projectedMonths[projectedMonths.length - 1]);
     } else {
       projEl.textContent = sorted.length ? "Année déjà terminée" : "—";
     }
   } else {
     projEl.textContent = "—";
+  }
+
+  // Projection individuelle par série (LA, VIE, DOCA, chaque dispositif, et le total)
+  // Même principe que ci-dessus, mais appliqué série par série pour tracer une courbe
+  // en pointillés pour chacune, qui se masque en même temps que sa courbe réelle.
+  function projectSeries(getValue) {
+    if (sorted.length < 2 || remainingMonths <= 0) return [];
+    const window = sorted.slice(-12);
+    const first = window[0], last = window[window.length - 1];
+    const span = monthsBetween(first.date, last.date);
+    const avgDelta = span > 0 ? (getValue(last) - getValue(first)) / span : 0;
+    const lastValue = getValue(last);
+    const out = [];
+    for (let i = 1; i <= remainingMonths; i++) out.push(lastValue + avgDelta * i);
+    return out;
   }
 
   // Légende à cases à cocher
@@ -1340,6 +1356,7 @@ function renderSavings() {
 
   const canvas = document.getElementById("savingsChart");
   if (savingsChart) { savingsChart.destroy(); savingsChart = null; }
+  savingsDatasetIndices = {};
 
   if (sorted.length > 0) {
     const realLabels = sorted.map(s => {
@@ -1358,42 +1375,51 @@ function renderSavings() {
     const labels = realLabels.concat(projLabels);
     const pad = (arr) => arr.concat(Array(projLabels.length).fill(null));
 
-    const dataByKey = {
-      la: pad(sorted.map(s => s.la)),
-      vie: pad(sorted.map(s => s.vie)),
-      doca: pad(sorted.map(s => s.doca)),
-      total: pad(sorted.map(s => totalForSnapshot(s))),
+    const valueGetters = {
+      la: s => s.la,
+      vie: s => s.vie,
+      doca: s => s.doca,
+      total: s => totalForSnapshot(s),
     };
-    devices.forEach(d => {
-      dataByKey[d.id] = pad(sorted.map(s => (s.extra && s.extra[d.id]) || 0));
-    });
+    devices.forEach(d => { valueGetters[d.id] = s => (s.extra && s.extra[d.id]) || 0; });
 
-    const datasets = allSeries.map(s => ({
-      label: s.label,
-      data: dataByKey[s.key],
-      borderColor: s.color,
-      backgroundColor: s.color,
-      tension: 0.35,
-      pointRadius: 3,
-      borderWidth: s.key === "total" ? 2.5 : 2,
-      hidden: savingsVisibility[s.key] === false,
-    }));
-
-    if (projectedMonths.length > 0) {
-      const projectionData = Array(realLabels.length - 1).fill(null)
-        .concat([totalForSnapshot(sorted[sorted.length - 1])])
-        .concat(projectedMonths);
+    const datasets = [];
+    allSeries.forEach(s => {
+      const getValue = valueGetters[s.key];
+      const isHidden = savingsVisibility[s.key] === false;
+      const realIndex = datasets.length;
       datasets.push({
-        label: "Projection",
-        data: projectionData,
-        borderColor: "#2F3437",
-        backgroundColor: "#2F3437",
-        borderDash: [6, 4],
+        label: s.label,
+        data: pad(sorted.map(getValue)),
+        borderColor: s.color,
+        backgroundColor: s.color,
         tension: 0.35,
         pointRadius: 3,
-        borderWidth: 2,
+        borderWidth: s.key === "total" ? 2.5 : 2,
+        hidden: isHidden,
       });
-    }
+      savingsDatasetIndices[s.key] = [realIndex];
+
+      const projValues = projectSeries(getValue);
+      if (projValues.length > 0) {
+        const projIndex = datasets.length;
+        const projectionData = Array(realLabels.length - 1).fill(null)
+          .concat([getValue(sorted[sorted.length - 1])])
+          .concat(projValues);
+        datasets.push({
+          label: `${s.label} (projection)`,
+          data: projectionData,
+          borderColor: s.color,
+          backgroundColor: s.color,
+          borderDash: [6, 4],
+          tension: 0.35,
+          pointRadius: 2,
+          borderWidth: s.key === "total" ? 2.5 : 1.6,
+          hidden: isHidden,
+        });
+        savingsDatasetIndices[s.key].push(projIndex);
+      }
+    });
 
     savingsChart = new Chart(canvas.getContext("2d"), {
       type: "line",
@@ -1420,9 +1446,10 @@ document.getElementById("savingsLegend").addEventListener("change", (e) => {
   const key = e.target.dataset.series;
   if (!key) return;
   savingsVisibility[key] = e.target.checked;
-  if (savingsChart) {
-    const index = SAVINGS_SERIES.findIndex(s => s.key === key);
-    savingsChart.setDatasetVisibility(index, e.target.checked);
+  if (savingsChart && savingsDatasetIndices[key]) {
+    savingsDatasetIndices[key].forEach(index => {
+      savingsChart.setDatasetVisibility(index, e.target.checked);
+    });
     savingsChart.update();
   }
 });
@@ -2089,6 +2116,8 @@ document.getElementById("profileMenu").addEventListener("click", (e) => {
     openModal("profileSwitchModalOverlay");
   } else if (action === "parametres") {
     openModal("settingsModalOverlay");
+  } else if (action === "my-info") {
+    openMyInfoModal();
   } else if (action === "logout") {
     sessionStorage.removeItem(LOCK_SESSION_KEY);
     document.getElementById("appRoot").style.display = "none";
@@ -2257,4 +2286,72 @@ document.getElementById("onboardingFinishBtn")?.addEventListener("click", () => 
   closeModal("onboardingOverlay");
   sessionStorage.setItem(LOCK_SESSION_KEY, "1");
   unlockApp();
+});
+
+/* ---------------- Mes informations (profil) ---------------- */
+function getOnboardingData() {
+  try {
+    const raw = localStorage.getItem(ONBOARDING_DATA_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function openMyInfoModal() {
+  const data = getOnboardingData();
+  document.getElementById("myInfoFirstName").value = data.firstName || "";
+  document.getElementById("myInfoNoIncome").checked = data.income === null && data.hasOwnProperty("income");
+  document.getElementById("myInfoIncome").value = data.income != null ? data.income : "";
+  document.getElementById("myInfoIncome").disabled = document.getElementById("myInfoNoIncome").checked;
+  if (data.situation) {
+    const el = document.querySelector(`input[name="myInfoSituation"][value="${data.situation}"]`);
+    if (el) el.checked = true;
+  }
+  const hasKids = !!data.hasKids;
+  document.getElementById("myInfoHasKids").checked = hasKids;
+  document.getElementById("myInfoKidsDetails").style.display = hasKids ? "flex" : "none";
+  document.getElementById("myInfoKidsCount").value = data.kidsCount || "";
+  document.getElementById("myInfoKidsAges").value = data.kidsAges || "";
+  if (data.logement) {
+    const el = document.querySelector(`input[name="myInfoLogement"][value="${data.logement}"]`);
+    if (el) el.checked = true;
+  }
+  document.querySelectorAll('input[name="myInfoGoal"]').forEach(el => {
+    el.checked = (data.goals || []).includes(el.value);
+  });
+  document.getElementById("myInfoSavedFeedback").textContent = "";
+  openModal("myInfoModalOverlay");
+}
+
+document.getElementById("myInfoNoIncome")?.addEventListener("change", (e) => {
+  const incomeInput = document.getElementById("myInfoIncome");
+  incomeInput.disabled = e.target.checked;
+  if (e.target.checked) incomeInput.value = "";
+});
+
+document.getElementById("myInfoHasKids")?.addEventListener("change", (e) => {
+  document.getElementById("myInfoKidsDetails").style.display = e.target.checked ? "flex" : "none";
+});
+
+document.getElementById("myInfoForm")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const firstName = document.getElementById("myInfoFirstName").value.trim();
+  const noIncome = document.getElementById("myInfoNoIncome").checked;
+  const income = noIncome ? null : (parseFloat(document.getElementById("myInfoIncome").value) || null);
+  const situation = document.querySelector('input[name="myInfoSituation"]:checked')?.value || null;
+  const hasKids = document.getElementById("myInfoHasKids").checked;
+  const kidsCount = hasKids ? (parseInt(document.getElementById("myInfoKidsCount").value, 10) || null) : null;
+  const kidsAges = hasKids ? document.getElementById("myInfoKidsAges").value.trim() : null;
+  const logement = document.querySelector('input[name="myInfoLogement"]:checked')?.value || null;
+  const goals = [...document.querySelectorAll('input[name="myInfoGoal"]:checked')].map(el => el.value);
+
+  const previous = getOnboardingData();
+  const data = { ...previous, firstName, income, situation, hasKids, kidsCount, kidsAges, logement, goals, updatedAt: new Date().toISOString() };
+  try {
+    localStorage.setItem(ONBOARDING_DATA_KEY, JSON.stringify(data));
+  } catch (err) { /* ignore */ }
+
+  document.getElementById("myInfoSavedFeedback").textContent = "Informations mises à jour ✓";
+  renderDashboard();
 });

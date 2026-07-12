@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=Lora:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-<link rel="stylesheet" href="style.css?v=20260712-1">
+<link rel="stylesheet" href="style.css?v=20260712-2">
 </head>
 <body>
 
@@ -121,6 +121,7 @@
         <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="epargner"> Épargner davantage</label>
         <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="budget"> Mieux gérer mon budget</label>
         <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="curieux"> Je suis simplement curieux(se)</label>
+        <label class="onboarding-checkbox-card"><input type="checkbox" name="onbGoal" value="autre"> Autre</label>
       </div>
       <div class="onboarding-nav">
         <button type="button" class="btn-secondary onboarding-back">Retour</button>
@@ -177,6 +178,7 @@
       </button>
       <div class="profile-menu" id="profileMenu">
         <button type="button" data-profile-action="switch-profile">Changer de profil</button>
+        <button type="button" data-profile-action="my-info">Mes informations</button>
         <button type="button" data-profile-action="parametres">Paramètres</button>
         <button type="button" data-profile-action="logout">Déconnexion</button>
       </div>
@@ -201,6 +203,75 @@
         <p class="hint" style="margin:0 0 14px;">Efface les données stockées sur cet appareil et recharge les dernières données par défaut de l'application (utile après une mise à jour).</p>
         <button type="button" class="btn-secondary" id="resetDataBtn" style="color:var(--danger); border-color:var(--danger);">Réinitialiser les données de cet appareil</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="myInfoModalOverlay">
+    <div class="modal-card" style="max-width: 460px;">
+      <button type="button" class="modal-close" aria-label="Fermer">✕</button>
+      <h2 class="section-title" style="margin-top:0;">Mes informations</h2>
+      <p class="hint" style="margin-top:-4px;">Renseignées lors de votre arrivée sur Oseille — modifiables à tout moment.</p>
+      <form id="myInfoForm" class="form-card" style="box-shadow:none; border:none; padding:0; max-width:none; gap:18px;">
+        <label class="onboarding-field">Prénom
+          <input type="text" id="myInfoFirstName" placeholder="Votre prénom">
+        </label>
+
+        <label class="onboarding-field">Revenu net mensuel (€)
+          <input type="number" id="myInfoIncome" min="0" step="1" placeholder="2 250">
+        </label>
+        <label class="onboarding-checkbox">
+          <input type="checkbox" id="myInfoNoIncome">
+          Je préfère ne pas répondre
+        </label>
+
+        <div>
+          <p class="hint" style="margin:0 0 8px;">Votre situation</p>
+          <div class="onboarding-radio-group" data-name="situation">
+            <label class="onboarding-radio"><input type="radio" name="myInfoSituation" value="seul"> Je vis seul(e)</label>
+            <label class="onboarding-radio"><input type="radio" name="myInfoSituation" value="couple"> En couple</label>
+            <label class="onboarding-radio"><input type="radio" name="myInfoSituation" value="coloc"> En colocation</label>
+            <label class="onboarding-radio"><input type="radio" name="myInfoSituation" value="parents"> Chez mes parents</label>
+            <label class="onboarding-radio"><input type="radio" name="myInfoSituation" value="autre"> Autre</label>
+          </div>
+        </div>
+
+        <label class="onboarding-checkbox-card" style="width:100%; box-sizing:border-box;">
+          <input type="checkbox" id="myInfoHasKids"> J'ai des enfants
+        </label>
+        <div class="onboarding-kids-details" id="myInfoKidsDetails" style="display:none;">
+          <label class="onboarding-field">Nombre d'enfants
+            <input type="number" id="myInfoKidsCount" min="1" max="12" step="1" placeholder="Ex : 2">
+          </label>
+          <label class="onboarding-field">Âge(s) des enfants
+            <input type="text" id="myInfoKidsAges" placeholder="Ex : 5 et 8 ans">
+          </label>
+        </div>
+
+        <div>
+          <p class="hint" style="margin:0 0 8px;">Votre logement</p>
+          <div class="onboarding-radio-group" data-name="logement">
+            <label class="onboarding-radio"><input type="radio" name="myInfoLogement" value="locataire"> Je suis locataire</label>
+            <label class="onboarding-radio"><input type="radio" name="myInfoLogement" value="proprietaire"> Je suis propriétaire</label>
+            <label class="onboarding-radio"><input type="radio" name="myInfoLogement" value="heberge"> Je suis hébergé(e)</label>
+          </div>
+        </div>
+
+        <div>
+          <p class="hint" style="margin:0 0 8px;">Vos objectifs</p>
+          <div class="onboarding-checkbox-group">
+            <label class="onboarding-checkbox-card"><input type="checkbox" name="myInfoGoal" value="comprendre"> Comprendre mes dépenses</label>
+            <label class="onboarding-checkbox-card"><input type="checkbox" name="myInfoGoal" value="economies"> Faire des économies</label>
+            <label class="onboarding-checkbox-card"><input type="checkbox" name="myInfoGoal" value="projet"> Préparer un projet</label>
+            <label class="onboarding-checkbox-card"><input type="checkbox" name="myInfoGoal" value="epargner"> Épargner davantage</label>
+            <label class="onboarding-checkbox-card"><input type="checkbox" name="myInfoGoal" value="budget"> Mieux gérer mon budget</label>
+            <label class="onboarding-checkbox-card"><input type="checkbox" name="myInfoGoal" value="curieux"> Je suis simplement curieux(se)</label>
+            <label class="onboarding-checkbox-card"><input type="checkbox" name="myInfoGoal" value="autre"> Autre</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-secondary" id="myInfoSaveBtn">Mettre à jour mes informations</button>
+        <p class="hint" id="myInfoSavedFeedback" style="margin:0; min-height:16px;"></p>
+      </form>
     </div>
   </div>
 
@@ -729,6 +800,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=20260712-1"></script>
+<script src="app.js?v=20260712-2"></script>
 </body>
 </html>

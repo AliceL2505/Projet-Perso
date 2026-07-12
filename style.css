@@ -793,9 +793,10 @@ body.hide-amounts input[data-saved-for]:focus {
   flex-wrap: wrap;
   margin-top: 28px;
 }
-.dashboard-gauges-col { flex: 1 1 460px; min-width: 0; }
+.dashboard-gauges-col { flex: 1 1 460px; min-width: 0; max-width: 780px; }
 .chart-card {
-  flex: 0 0 280px;
+  flex: 1 1 340px;
+  max-width: 380px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -806,7 +807,7 @@ body.hide-amounts input[data-saved-for]:focus {
   align-items: center;
 }
 .chart-card .section-title { margin-top: 0; align-self: flex-start; }
-.chart-card canvas { max-width: 200px; max-height: 200px; }
+.chart-card canvas { max-width: 260px; max-height: 260px; }
 .savings-chart-card { flex: none; width: 100%; max-width: 780px; align-items: stretch; margin-bottom: 12px; }
 .savings-chart-card canvas { max-width: 100%; max-height: 320px; width: 100% !important; height: 260px !important; }
 .savings-legend {
