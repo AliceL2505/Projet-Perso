@@ -208,6 +208,7 @@ function loadState(profileId) {
       if (!parsed.projects) parsed.projects = [];
       if (!parsed.savings) parsed.savings = SEED_SAVINGS.map(s => ({ ...s, id: uid() }));
       if (!parsed.savingsDevices) parsed.savingsDevices = [];
+      if (!parsed.credits) parsed.credits = [];
       if (!parsed.soldeCourant) parsed.soldeCourant = { amount: 0, date: null };
       // Migration automatique : si une nouvelle version des données de référence est disponible
       // (mise à jour de l'historique importé depuis l'Excel), on resynchronise silencieusement
@@ -232,6 +233,7 @@ function loadState(profileId) {
       projects: [],
       savings: SEED_SAVINGS.map(s => ({ ...s, id: uid() })),
       savingsDevices: [],
+      credits: [],
       soldeCourant: { amount: 1239.64, date: "2026-07-06" },
       _seedVersion: SEED_DATA_VERSION,
     };
@@ -246,6 +248,7 @@ function loadState(profileId) {
       projects: [],
       savings: [],
       savingsDevices: [],
+      credits: [],
       soldeCourant: { amount: 0, date: null },
     };
   }
@@ -258,6 +261,7 @@ function loadState(profileId) {
     projects: [],
     savings: [],
     savingsDevices: [],
+    credits: [],
     soldeCourant: { amount: 0, date: null },
   };
 }
@@ -329,6 +333,15 @@ function sortedCategories() {
   });
 }
 
+// Ordre personnalisé des jauges de dépenses sur le tableau de bord (glisser-déposer).
+// Les catégories sans ordre défini gardent l'ordre alphabétique, à la suite de celles déjà réordonnées.
+function dashboardOrderedExpenseCats() {
+  const expenseCats = state.categories.filter(c => c.type === "expense");
+  const ordered = expenseCats.filter(c => typeof c.dashboardOrder === "number").sort((a, b) => a.dashboardOrder - b.dashboardOrder);
+  const rest = expenseCats.filter(c => typeof c.dashboardOrder !== "number").sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  return [...ordered, ...rest];
+}
+
 const CATEGORY_EMOJI = {
   salaire: "💼", primes: "💰", remboursements: "💸",
   charges: "🏠", courses: "🛒", restaurants: "🍽️",
@@ -378,6 +391,7 @@ const TAB_TITLES = {
   monthly: "Résumé mensuel",
   yearly: "Comparatif annuel",
   savings: "Suivi épargne",
+  credits: "Crédit",
 };
 
 function updateTopbarVisibility(tabName) {
@@ -404,6 +418,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "monthly") renderMonthlyPivot();
   if (btn.dataset.tab === "projects") renderProjects();
   if (btn.dataset.tab === "savings") renderSavings();
+  if (btn.dataset.tab === "credits") renderCredits();
 });
 
 /* ---------------- Navigation entre mois ---------------- */
@@ -559,7 +574,7 @@ function renderDashboard() {
   // Jauges par catégorie de dépense ayant un budget défini
   const container = document.getElementById("gaugesContainer");
   container.innerHTML = "";
-  const expenseCats = sortedCategories().filter(c => c.type === "expense");
+  const expenseCats = dashboardOrderedExpenseCats();
 
   if (expenseCats.every(c => !c.budget)) {
     container.innerHTML = `<p class="empty-state">Définissez des budgets dans l'onglet « Catégories » pour voir apparaître vos jauges ici.</p>`;
@@ -574,8 +589,10 @@ function renderDashboard() {
       const row = document.createElement("div");
       row.className = "gauge-row gauge-row-clickable" + (realPct >= 100 ? " gauge-row-over" : "");
       row.dataset.categoryId = cat.id;
+      row.draggable = true;
       row.innerHTML = `
         <div class="gauge-top">
+          <span class="gauge-drag-handle" title="Glisser pour réorganiser" draggable="false">⠿⠿</span>
           <span class="gauge-name">${catLabel(cat)}</span>
           <span class="gauge-figures">${money(spent)} / ${money(cat.budget)}</span>
         </div>
@@ -1051,6 +1068,132 @@ document.getElementById("projectList").addEventListener("click", (e) => {
   state.projects = state.projects.filter(p => p.id !== id);
   saveState();
   renderProjects();
+});
+
+/* ---------------- Crédit ---------------- */
+function renderCredits() {
+  const list = document.getElementById("creditList");
+  list.innerHTML = "";
+
+  if (!state.credits || state.credits.length === 0) {
+    list.innerHTML = `<p class="empty-state">Aucun crédit pour l'instant. Ajoute-en un ci-dessous, par exemple « Prêt immobilier » ou « Prêt auto ».</p>`;
+    return;
+  }
+
+  const sorted = [...state.credits].sort((a, b) => {
+    if (a.endDate && b.endDate) return a.endDate.localeCompare(b.endDate);
+    if (a.endDate) return -1;
+    if (b.endDate) return 1;
+    return 0;
+  });
+
+  sorted.forEach(c => {
+    const total = c.total || 0;
+    const remaining = Math.max(0, c.remaining || 0);
+    const repaid = Math.max(0, total - remaining);
+    const pct = total > 0 ? Math.min(100, Math.round((repaid / total) * 100)) : 0;
+
+    let deadlineHtml = "";
+    if (c.endDate) {
+      const [y, m, d] = c.endDate.split("-");
+      deadlineHtml = `<p class="project-deadline">Fin prévue le <strong>${d}/${m}/${y}</strong></p>`;
+    }
+    let monthlyHtml = c.monthly ? `<p class="project-deadline">Mensualité : <strong>${money(c.monthly)}</strong></p>` : "";
+
+    const card = document.createElement("div");
+    card.className = "project-card";
+    card.innerHTML = `
+      <div class="gauge-track credit-progress-top">
+        <div class="gauge-fill ok" style="width:${pct}%"></div>
+      </div>
+      <div class="project-top">
+        <div>
+          <div class="project-name">${c.name}</div>
+          ${c.note ? `<p class="project-note">${c.note}</p>` : ""}
+        </div>
+        <div class="project-actions">
+          <button class="icon-btn" data-edit-credit="${c.id}" aria-label="Modifier ${c.name}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="icon-btn" data-delete-credit="${c.id}" aria-label="Supprimer ${c.name}">✕</button>
+        </div>
+      </div>
+      <div class="project-figures">${money(repaid)} remboursés / ${money(total)} (${pct}%)</div>
+      <p class="project-deadline">Reste à rembourser : <strong>${money(remaining)}</strong></p>
+      ${monthlyHtml}
+      ${deadlineHtml}
+      <div class="project-editrow">
+        <label>Mettre à jour le restant dû :
+          <input type="number" min="0" step="1" value="${remaining}" data-remaining-for="${c.id}" aria-label="Montant restant dû pour ${c.name}">
+        </label>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+document.getElementById("creditList").addEventListener("change", (e) => {
+  const id = e.target.dataset.remainingFor;
+  if (!id) return;
+  const c = state.credits.find(cr => cr.id === id);
+  if (!c) return;
+  c.remaining = parseFloat(e.target.value) || 0;
+  saveState();
+  renderCredits();
+});
+
+let editingCreditId = null;
+
+document.getElementById("creditList").addEventListener("click", (e) => {
+  const editId = e.target.closest("[data-edit-credit]")?.dataset.editCredit;
+  if (editId) {
+    const c = state.credits.find(cr => cr.id === editId);
+    if (!c) return;
+    editingCreditId = editId;
+    document.getElementById("creditModalTitle").textContent = "Modifier le crédit";
+    document.getElementById("creditFormSubmitBtn").textContent = "Enregistrer les modifications";
+    document.getElementById("creditName").value = c.name;
+    document.getElementById("creditTotal").value = c.total;
+    document.getElementById("creditRemaining").value = c.remaining;
+    document.getElementById("creditMonthly").value = c.monthly || "";
+    document.getElementById("creditEndDate").value = c.endDate || "";
+    document.getElementById("creditNote").value = c.note || "";
+    openModal("creditModalOverlay");
+    return;
+  }
+  const id = e.target.dataset.deleteCredit;
+  if (!id) return;
+  if (!confirm("Supprimer ce crédit ?")) return;
+  state.credits = state.credits.filter(c => c.id !== id);
+  saveState();
+  renderCredits();
+});
+
+document.getElementById("openCreditModalCard").addEventListener("click", () => {
+  editingCreditId = null;
+  document.getElementById("creditModalTitle").textContent = "Nouveau crédit";
+  document.getElementById("creditFormSubmitBtn").textContent = "Créer le crédit";
+  creditForm.reset();
+});
+
+const creditForm = document.getElementById("creditForm");
+creditForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("creditName").value.trim();
+  const total = parseFloat(document.getElementById("creditTotal").value) || 0;
+  const remaining = parseFloat(document.getElementById("creditRemaining").value) || 0;
+  const monthly = parseFloat(document.getElementById("creditMonthly").value) || null;
+  const endDate = document.getElementById("creditEndDate").value || null;
+  const note = document.getElementById("creditNote").value.trim();
+  if (!name || total <= 0) return;
+  if (editingCreditId) {
+    const c = state.credits.find(cr => cr.id === editingCreditId);
+    if (c) { c.name = name; c.total = total; c.remaining = remaining; c.monthly = monthly; c.endDate = endDate; c.note = note; }
+    editingCreditId = null;
+  } else {
+    state.credits.push({ id: uid(), name, total, remaining, monthly, endDate, note });
+  }
+  saveState();
+  creditForm.reset();
+  renderCredits();
+  closeModal("creditModalOverlay");
 });
 
 document.getElementById("openProjectModalCard").addEventListener("click", () => {
@@ -1608,10 +1751,57 @@ document.getElementById("yearlyViewMenu").addEventListener("click", (e) => {
   renderYearlyComparison();
 });
 
+let gaugesDragJustHappened = false;
+let gaugesDraggedId = null;
+
+const gaugesContainerEl = document.getElementById("gaugesContainer");
+
+gaugesContainerEl.addEventListener("dragstart", (e) => {
+  const row = e.target.closest(".gauge-row");
+  if (!row) return;
+  gaugesDraggedId = row.dataset.categoryId;
+  row.classList.add("gauge-row-dragging");
+  e.dataTransfer.effectAllowed = "move";
+  try { e.dataTransfer.setData("text/plain", gaugesDraggedId); } catch (err) { /* ignore */ }
+});
+
+gaugesContainerEl.addEventListener("dragover", (e) => {
+  if (!gaugesDraggedId) return;
+  e.preventDefault();
+  const overRow = e.target.closest(".gauge-row");
+  if (!overRow || overRow.dataset.categoryId === gaugesDraggedId) return;
+  const rect = overRow.getBoundingClientRect();
+  const before = (e.clientY - rect.top) < rect.height / 2;
+  const draggedEl = gaugesContainerEl.querySelector(`.gauge-row[data-category-id="${gaugesDraggedId}"]`);
+  if (!draggedEl) return;
+  if (before) overRow.parentNode.insertBefore(draggedEl, overRow);
+  else overRow.parentNode.insertBefore(draggedEl, overRow.nextSibling);
+});
+
+gaugesContainerEl.addEventListener("drop", (e) => {
+  e.preventDefault();
+});
+
+gaugesContainerEl.addEventListener("dragend", (e) => {
+  const row = e.target.closest(".gauge-row");
+  if (row) row.classList.remove("gauge-row-dragging");
+  if (!gaugesDraggedId) return;
+  gaugesDragJustHappened = true;
+  // Persiste le nouvel ordre visuel des jauges dans les catégories.
+  const order = [...gaugesContainerEl.querySelectorAll(".gauge-row")].map(r => r.dataset.categoryId);
+  order.forEach((catId, index) => {
+    const cat = catById(catId);
+    if (cat) cat.dashboardOrder = index;
+  });
+  gaugesDraggedId = null;
+  saveState();
+});
+
 document.getElementById("gaugesContainer").addEventListener("click", (e) => {
   const row = e.target.closest(".gauge-row-clickable");
   if (!row) return;
   const catId = row.dataset.categoryId;
+  if (gaugesDragJustHappened) { gaugesDragJustHappened = false; return; }
   const cat = catById(catId);
   const txs = transactionsForMonth(currentMonth)
     .filter(t => t.categoryId === catId)
@@ -2011,9 +2201,11 @@ function onboardingGoTo(n) {
 }
 
 const onboardingStartBtn = document.getElementById("onboardingStartBtn");
-if (localStorage.getItem(ONBOARDING_DONE_KEY) === "1" && onboardingStartBtn) {
-  onboardingStartBtn.style.display = "none";
-}
+// NOTE version test : on laisse volontairement le bouton toujours visible pour l'instant,
+// même après un premier passage. À réactiver plus tard :
+// if (localStorage.getItem(ONBOARDING_DONE_KEY) === "1" && onboardingStartBtn) {
+//   onboardingStartBtn.style.display = "none";
+// }
 
 if (onboardingStartBtn) {
   onboardingStartBtn.addEventListener("click", () => {
@@ -2034,6 +2226,10 @@ document.getElementById("onbNoIncome")?.addEventListener("change", (e) => {
   if (e.target.checked) incomeInput.value = "";
 });
 
+document.getElementById("onbHasKids")?.addEventListener("change", (e) => {
+  document.getElementById("onbKidsDetails").style.display = e.target.checked ? "flex" : "none";
+});
+
 document.querySelectorAll(".onboarding-next").forEach(btn => {
   btn.addEventListener("click", () => onboardingGoTo(onboardingScreen + 1));
 });
@@ -2046,10 +2242,13 @@ document.getElementById("onboardingFinishBtn")?.addEventListener("click", () => 
   const noIncome = document.getElementById("onbNoIncome").checked;
   const income = noIncome ? null : (parseFloat(document.getElementById("onbIncome").value) || null);
   const situation = document.querySelector('input[name="onbSituation"]:checked')?.value || null;
+  const hasKids = document.getElementById("onbHasKids").checked;
+  const kidsCount = hasKids ? (parseInt(document.getElementById("onbKidsCount").value, 10) || null) : null;
+  const kidsAges = hasKids ? document.getElementById("onbKidsAges").value.trim() : null;
   const logement = document.querySelector('input[name="onbLogement"]:checked')?.value || null;
   const goals = [...document.querySelectorAll('input[name="onbGoal"]:checked')].map(el => el.value);
 
-  const data = { firstName, income, situation, logement, goals, completedAt: new Date().toISOString() };
+  const data = { firstName, income, situation, hasKids, kidsCount, kidsAges, logement, goals, completedAt: new Date().toISOString() };
   try {
     localStorage.setItem(ONBOARDING_DATA_KEY, JSON.stringify(data));
     localStorage.setItem(ONBOARDING_DONE_KEY, "1");

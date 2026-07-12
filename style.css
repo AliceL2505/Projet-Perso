@@ -279,6 +279,16 @@ body {
   border-color: var(--wine);
   background: var(--wine-tint);
 }
+.onboarding-kids-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+}
 .onboarding-nav {
   display: flex;
   gap: 10px;
@@ -902,7 +912,9 @@ body.hide-amounts input[data-saved-for]:focus {
   border-radius: var(--radius);
   padding: 16px 20px;
   box-shadow: var(--shadow);
+  transition: opacity .15s ease, box-shadow .15s ease;
 }
+.gauge-row-dragging { opacity: 0.4; }
 .gauge-top {
   display: flex;
   justify-content: space-between;
@@ -910,7 +922,17 @@ body.hide-amounts input[data-saved-for]:focus {
   margin-bottom: 10px;
   font-size: 13.5px;
 }
-.gauge-name { font-weight: 600; }
+.gauge-drag-handle {
+  color: var(--ink-soft);
+  opacity: 0.45;
+  font-size: 13px;
+  letter-spacing: -2px;
+  cursor: grab;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.gauge-drag-handle:active { cursor: grabbing; }
+.gauge-name { font-weight: 600; flex: 1; }
 .gauge-figures { color: var(--ink-soft); font-size: 12.5px; }
 .gauge-track {
   position: relative;
@@ -1432,6 +1454,7 @@ input:focus, select:focus {
   flex-direction: column;
   gap: 10px;
 }
+.credit-progress-top { order: -1; margin-bottom: 4px; }
 .project-top {
   display: flex;
   justify-content: space-between;
