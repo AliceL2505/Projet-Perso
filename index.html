@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=Lora:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-<link rel="stylesheet" href="style.css?v=20260709-5">
+<link rel="stylesheet" href="style.css?v=20260709-6">
 </head>
 <body>
 
@@ -328,20 +328,20 @@
                 </label>
               </div>
 
+              <div class="tx-sign-row" role="radiogroup" aria-label="Sens de l'opération">
+                <label class="tx-sign-choice">
+                  <input type="radio" name="txSign" value="expense" checked>
+                  <span>💸 Dépense</span>
+                </label>
+                <label class="tx-sign-choice">
+                  <input type="radio" name="txSign" value="income">
+                  <span>💰 Revenu</span>
+                </label>
+              </div>
+
               <label>Catégorie
                 <select id="txCategory" required></select>
               </label>
-
-              <div class="radio-row" role="radiogroup" aria-label="Sens de l'opération">
-                <label class="radio-choice">
-                  <input type="radio" name="txSign" value="expense" checked>
-                  <span>Dépense (sort du compte)</span>
-                </label>
-                <label class="radio-choice">
-                  <input type="radio" name="txSign" value="income">
-                  <span>Revenu / remboursement (rentre sur le compte)</span>
-                </label>
-              </div>
 
               <label>Note (optionnel)
                 <input type="text" id="txNote" placeholder="Ex : Déjeuner avec Owen">
@@ -672,6 +672,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=20260709-5"></script>
+<script src="app.js?v=20260709-6"></script>
 </body>
 </html>

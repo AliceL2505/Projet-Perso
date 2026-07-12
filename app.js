@@ -675,25 +675,27 @@ document.getElementById("txDate").valueAsDate = new Date();
 function renderCategorySelect() {
   const select = document.getElementById("txCategory");
   const prevValue = select.value;
+  const sign = document.querySelector('input[name="txSign"]:checked')?.value || "expense";
+  const wantedType = sign === "income" ? "income" : "expense";
   select.innerHTML = "";
-  sortedCategories().forEach(cat => {
-    const opt = document.createElement("option");
-    opt.value = cat.id;
-    opt.textContent = `${cat.name} (${cat.type === "income" ? "Revenu" : "Dépense"})`;
-    select.appendChild(opt);
-  });
-  if (prevValue) select.value = prevValue;
-  syncSignWithCategory();
+  state.categories
+    .filter(cat => cat.type === wantedType)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+    .forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat.id;
+      opt.textContent = catLabel(cat);
+      select.appendChild(opt);
+    });
+  if (prevValue && [...select.options].some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  }
 }
 
-function syncSignWithCategory() {
-  const cat = catById(document.getElementById("txCategory").value);
-  if (!cat) return;
-  const wanted = cat.type === "income" ? "income" : "expense";
-  document.querySelector(`input[name="txSign"][value="${wanted}"]`).checked = true;
-}
-
-document.getElementById("txCategory").addEventListener("change", syncSignWithCategory);
+document.querySelectorAll('input[name="txSign"]').forEach(el => {
+  el.addEventListener("change", renderCategorySelect);
+});
 
 txForm.addEventListener("submit", (e) => {
   e.preventDefault();

@@ -1031,6 +1031,39 @@ input:focus, select:focus {
 }
 .radio-choice input { width: auto; padding: 0; accent-color: var(--wine); }
 
+.tx-sign-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.tx-sign-choice {
+  all: unset;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: center;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.tx-sign-choice input { position: absolute; opacity: 0; width: 0; height: 0; }
+.tx-sign-choice:hover { background: var(--neutral-hover); }
+.tx-sign-choice:has(input:checked) {
+  border-color: var(--wine);
+  background: var(--wine-tint);
+  color: var(--wine-dim);
+}
+
 .btn-primary, .btn-secondary {
   font-family: var(--font-body);
   font-weight: 600;
