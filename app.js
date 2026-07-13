@@ -1121,7 +1121,7 @@ function renderCredits() {
       ${deadlineHtml}
       <div class="project-editrow">
         <label>Mettre à jour le restant dû :
-          <input type="number" min="0" step="1" value="${remaining}" data-remaining-for="${c.id}" aria-label="Montant restant dû pour ${c.name}">
+          <input type="number" min="0" step="0.01" value="${remaining}" data-remaining-for="${c.id}" aria-label="Montant restant dû pour ${c.name}">
         </label>
       </div>`;
     list.appendChild(card);

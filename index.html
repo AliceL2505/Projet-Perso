@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=Lora:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-<link rel="stylesheet" href="style.css?v=20260712-3">
+<link rel="stylesheet" href="style.css?v=20260712-4">
 </head>
 <body>
 
@@ -763,15 +763,15 @@
               </label>
               <div class="field-row">
                 <label>Montant emprunté (€)
-                  <input type="number" id="creditTotal" min="0" step="1" placeholder="10000" required>
+                  <input type="number" id="creditTotal" min="0" step="0.01" placeholder="10000" required>
                 </label>
                 <label>Montant restant dû (€)
-                  <input type="number" id="creditRemaining" min="0" step="1" placeholder="6000" required>
+                  <input type="number" id="creditRemaining" min="0" step="0.01" placeholder="6000" required>
                 </label>
               </div>
               <div class="field-row">
                 <label>Mensualité (optionnel, €)
-                  <input type="number" id="creditMonthly" min="0" step="1" placeholder="250">
+                  <input type="number" id="creditMonthly" min="0" step="0.01" placeholder="250">
                 </label>
                 <label>Date de fin prévue (optionnel)
                   <input type="date" id="creditEndDate">
@@ -800,6 +800,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js?v=20260712-3"></script>
+<script src="app.js?v=20260712-4"></script>
 </body>
 </html>
