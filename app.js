@@ -1170,6 +1170,7 @@ document.getElementById("openCreditModalCard").addEventListener("click", () => {
   document.getElementById("creditModalTitle").textContent = "Nouveau crédit";
   document.getElementById("creditFormSubmitBtn").textContent = "Créer le crédit";
   creditForm.reset();
+  openModal("creditModalOverlay");
 });
 
 const creditForm = document.getElementById("creditForm");
