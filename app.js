@@ -1078,7 +1078,7 @@ function computeAutoRepaidForCredit(c) {
     t.amount < 0 &&
     Math.abs(Math.abs(t.amount) - c.monthly) < tolerance
   );
-  const repaid = matches.reduce((s, t) => s + Math.abs(t.amount), 0);
+  const repaid = matches.reduce((s, t) => s + Math.abs(t.amount), 0) + (c.manualAdjustment || 0);
   return { repaid, count: matches.length };
 }
 
@@ -1124,7 +1124,8 @@ function renderCredits() {
     let updateRowHtml;
     if (auto) {
       const cat = catById(c.linkedCategoryId);
-      updateRowHtml = `<p class="hint" style="margin:0;">🔗 Détecté automatiquement : ${auto.count} opération${auto.count > 1 ? "s" : ""} de ${money(c.monthly)} dans « ${cat ? catLabel(cat) : "catégorie supprimée"} ».</p>`;
+      const adjustmentHtml = c.manualAdjustment ? ` + ${money(c.manualAdjustment)} ajoutés à la main` : "";
+      updateRowHtml = `<p class="hint" style="margin:0;">🔗 Détecté automatiquement : ${auto.count} opération${auto.count > 1 ? "s" : ""} de ${money(c.monthly)} dans « ${cat ? catLabel(cat) : "catégorie supprimée"} »${adjustmentHtml}.</p>`;
     } else {
       updateRowHtml = `
       <div class="project-editrow">
@@ -1194,6 +1195,7 @@ document.getElementById("creditList").addEventListener("click", (e) => {
     document.getElementById("creditMonthly").value = c.monthly || "";
     document.getElementById("creditEndDate").value = c.endDate || "";
     document.getElementById("creditNote").value = c.note || "";
+    document.getElementById("creditManualAdjustment").value = c.manualAdjustment || "";
     populateCreditLinkedCategorySelect(c.linkedCategoryId);
     openModal("creditModalOverlay");
     return;
@@ -1224,6 +1226,7 @@ creditForm.addEventListener("submit", (e) => {
   const monthly = parseFloat(document.getElementById("creditMonthly").value) || null;
   const endDate = document.getElementById("creditEndDate").value || null;
   const note = document.getElementById("creditNote").value.trim();
+  const manualAdjustment = parseFloat(document.getElementById("creditManualAdjustment").value) || 0;
   const linkedCategoryId = document.getElementById("creditLinkedCategory").value || null;
   if (!name || total <= 0) return;
   if (linkedCategoryId && !monthly) {
@@ -1232,10 +1235,10 @@ creditForm.addEventListener("submit", (e) => {
   }
   if (editingCreditId) {
     const c = state.credits.find(cr => cr.id === editingCreditId);
-    if (c) { c.name = name; c.total = total; c.remaining = remaining; c.monthly = monthly; c.endDate = endDate; c.note = note; c.linkedCategoryId = linkedCategoryId; }
+    if (c) { c.name = name; c.total = total; c.remaining = remaining; c.monthly = monthly; c.endDate = endDate; c.note = note; c.linkedCategoryId = linkedCategoryId; c.manualAdjustment = manualAdjustment; }
     editingCreditId = null;
   } else {
-    state.credits.push({ id: uid(), name, total, remaining, monthly, endDate, note, linkedCategoryId });
+    state.credits.push({ id: uid(), name, total, remaining, monthly, endDate, note, linkedCategoryId, manualAdjustment });
   }
   saveState();
   creditForm.reset();
