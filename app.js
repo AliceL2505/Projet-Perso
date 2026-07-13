@@ -1070,6 +1070,18 @@ document.getElementById("projectList").addEventListener("click", (e) => {
 });
 
 /* ---------------- Crédit ---------------- */
+function computeAutoRepaidForCredit(c) {
+  if (!c.linkedCategoryId || !c.monthly) return null;
+  const tolerance = 0.05;
+  const matches = state.transactions.filter(t =>
+    t.categoryId === c.linkedCategoryId &&
+    t.amount < 0 &&
+    Math.abs(Math.abs(t.amount) - c.monthly) < tolerance
+  );
+  const repaid = matches.reduce((s, t) => s + Math.abs(t.amount), 0);
+  return { repaid, count: matches.length };
+}
+
 function renderCredits() {
   const list = document.getElementById("creditList");
   list.innerHTML = "";
@@ -1086,10 +1098,20 @@ function renderCredits() {
     return 0;
   });
 
+  let changed = false;
   sorted.forEach(c => {
     const total = c.total || 0;
-    const remaining = Math.max(0, c.remaining || 0);
-    const repaid = Math.max(0, total - remaining);
+    const auto = computeAutoRepaidForCredit(c);
+    let remaining, repaid;
+    if (auto) {
+      repaid = Math.min(total, auto.repaid);
+      remaining = Math.max(0, total - repaid);
+      // On garde state.credits synchronisé pour que le solde/les autres vues restent cohérents.
+      if (c.remaining !== remaining) { c.remaining = remaining; changed = true; }
+    } else {
+      remaining = Math.max(0, c.remaining || 0);
+      repaid = Math.max(0, total - remaining);
+    }
     const pct = total > 0 ? Math.min(100, Math.round((repaid / total) * 100)) : 0;
 
     let deadlineHtml = "";
@@ -1098,6 +1120,19 @@ function renderCredits() {
       deadlineHtml = `<p class="project-deadline">Fin prévue le <strong>${d}/${m}/${y}</strong></p>`;
     }
     let monthlyHtml = c.monthly ? `<p class="project-deadline">Mensualité : <strong>${money(c.monthly)}</strong></p>` : "";
+
+    let updateRowHtml;
+    if (auto) {
+      const cat = catById(c.linkedCategoryId);
+      updateRowHtml = `<p class="hint" style="margin:0;">🔗 Détecté automatiquement : ${auto.count} opération${auto.count > 1 ? "s" : ""} de ${money(c.monthly)} dans « ${cat ? catLabel(cat) : "catégorie supprimée"} ».</p>`;
+    } else {
+      updateRowHtml = `
+      <div class="project-editrow">
+        <label>Mettre à jour le restant dû :
+          <input type="number" min="0" step="0.01" value="${remaining}" data-remaining-for="${c.id}" aria-label="Montant restant dû pour ${c.name}">
+        </label>
+      </div>`;
+    }
 
     const card = document.createElement("div");
     card.className = "project-card";
@@ -1119,13 +1154,10 @@ function renderCredits() {
       <p class="project-deadline">Reste à rembourser : <strong>${money(remaining)}</strong></p>
       ${monthlyHtml}
       ${deadlineHtml}
-      <div class="project-editrow">
-        <label>Mettre à jour le restant dû :
-          <input type="number" min="0" step="0.01" value="${remaining}" data-remaining-for="${c.id}" aria-label="Montant restant dû pour ${c.name}">
-        </label>
-      </div>`;
+      ${updateRowHtml}`;
     list.appendChild(card);
   });
+  if (changed) saveState();
 }
 
 document.getElementById("creditList").addEventListener("change", (e) => {
@@ -1139,6 +1171,14 @@ document.getElementById("creditList").addEventListener("change", (e) => {
 });
 
 let editingCreditId = null;
+
+function populateCreditLinkedCategorySelect(selectedId) {
+  const select = document.getElementById("creditLinkedCategory");
+  const expenseCats = state.categories.filter(cat => cat.type === "expense").slice().sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  select.innerHTML = `<option value="">Aucune — je mets à jour le restant dû moi-même</option>` +
+    expenseCats.map(cat => `<option value="${cat.id}">${catLabel(cat)}</option>`).join("");
+  select.value = selectedId || "";
+}
 
 document.getElementById("creditList").addEventListener("click", (e) => {
   const editId = e.target.closest("[data-edit-credit]")?.dataset.editCredit;
@@ -1154,6 +1194,7 @@ document.getElementById("creditList").addEventListener("click", (e) => {
     document.getElementById("creditMonthly").value = c.monthly || "";
     document.getElementById("creditEndDate").value = c.endDate || "";
     document.getElementById("creditNote").value = c.note || "";
+    populateCreditLinkedCategorySelect(c.linkedCategoryId);
     openModal("creditModalOverlay");
     return;
   }
@@ -1170,6 +1211,7 @@ document.getElementById("openCreditModalCard").addEventListener("click", () => {
   document.getElementById("creditModalTitle").textContent = "Nouveau crédit";
   document.getElementById("creditFormSubmitBtn").textContent = "Créer le crédit";
   creditForm.reset();
+  populateCreditLinkedCategorySelect(null);
   openModal("creditModalOverlay");
 });
 
@@ -1182,13 +1224,18 @@ creditForm.addEventListener("submit", (e) => {
   const monthly = parseFloat(document.getElementById("creditMonthly").value) || null;
   const endDate = document.getElementById("creditEndDate").value || null;
   const note = document.getElementById("creditNote").value.trim();
+  const linkedCategoryId = document.getElementById("creditLinkedCategory").value || null;
   if (!name || total <= 0) return;
+  if (linkedCategoryId && !monthly) {
+    alert("Pour lier une catégorie et détecter automatiquement les remboursements, renseigne aussi la mensualité (c'est elle qui sert à repérer les bonnes opérations).");
+    return;
+  }
   if (editingCreditId) {
     const c = state.credits.find(cr => cr.id === editingCreditId);
-    if (c) { c.name = name; c.total = total; c.remaining = remaining; c.monthly = monthly; c.endDate = endDate; c.note = note; }
+    if (c) { c.name = name; c.total = total; c.remaining = remaining; c.monthly = monthly; c.endDate = endDate; c.note = note; c.linkedCategoryId = linkedCategoryId; }
     editingCreditId = null;
   } else {
-    state.credits.push({ id: uid(), name, total, remaining, monthly, endDate, note });
+    state.credits.push({ id: uid(), name, total, remaining, monthly, endDate, note, linkedCategoryId });
   }
   saveState();
   creditForm.reset();
