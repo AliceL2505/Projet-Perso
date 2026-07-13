@@ -1322,6 +1322,7 @@ input:focus, select:focus {
   border-collapse: collapse;
   margin-top: 14px;
   font-size: 13.5px;
+  line-height: 1;
 }
 .history-table th {
   text-align: left;
@@ -1336,6 +1337,7 @@ input:focus, select:focus {
   padding: 1px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
+  line-height: 1;
 }
 .history-table .num { text-align: right; }
 .history-table .icon-btn { position: relative; top: -6px; }
