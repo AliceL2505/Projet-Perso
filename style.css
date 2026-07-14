@@ -1275,7 +1275,6 @@ input:focus, select:focus {
   line-height: 1;
   box-sizing: border-box;
 }
-.history-table .icon-btn { height: 18px !important; line-height: 18px !important; padding: 0 6px !important; display: inline-flex; align-items: center; }
 .icon-btn:hover { color: var(--danger); }
 
 /* ---------- Historique ---------- */
@@ -1325,7 +1324,6 @@ input:focus, select:focus {
   border-collapse: collapse;
   margin-top: 14px;
   font-size: 13.5px;
-  line-height: 1;
 }
 .history-table th {
   text-align: left;
@@ -1337,13 +1335,33 @@ input:focus, select:focus {
   border-bottom: 1px solid var(--line);
 }
 .history-table td {
-  padding: 1px 12px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
-  line-height: 1;
 }
 .history-table .num { text-align: right; }
-.history-table .icon-btn { position: relative; }
+
+/* ---------- Tableau compact (Opérations + Suivi épargne) ---------- */
+/* Rangée plus resserrée que le tableau générique, avec un centrage vertical
+   fiable de tous les éléments (texte, champs éditables, gélule, bouton). */
+.ops-table td {
+  padding: 6px 12px !important;
+  height: 40px;
+  box-sizing: border-box;
+}
+.ops-table .icon-btn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 6px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 15px;
+}
+.ops-table .icon-btn:hover { color: var(--danger); }
 .history-table th.num { text-align: right; }
 .row-income td.num { color: var(--success); }
 .inline-cat-select {
@@ -1353,10 +1371,10 @@ input:focus, select:focus {
   -moz-appearance: none;
   display: inline-block;
   box-sizing: border-box;
-  height: 18px !important;
-  line-height: 18px !important;
+  height: 24px !important;
+  line-height: 24px !important;
   padding: 0 6px !important;
-  margin: 0 -6px;
+  margin: 0;
   font-size: 13.5px;
   font-family: var(--font-body);
   color: var(--ink);
@@ -1364,7 +1382,6 @@ input:focus, select:focus {
   cursor: pointer;
   max-width: 180px;
   vertical-align: middle;
-  position: relative;
 }
 .inline-cat-select:hover { background: var(--neutral-hover); }
 .inline-cat-select:focus { outline: 2px solid var(--wine); background: #fff; }
@@ -1384,19 +1401,17 @@ input:focus, select:focus {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  display: inline-flex;
-  align-items: center;
   box-sizing: border-box;
-  height: 18px !important;
+  height: 24px !important;
+  line-height: 24px !important;
   padding: 0 8px !important;
-  margin: 0 -8px;
+  margin: 0;
   font-size: 13.5px;
   font-family: var(--font-body);
   color: var(--ink);
   border-radius: 6px;
   width: 100%;
   vertical-align: middle;
-  line-height: normal;
   cursor: text;
 }
 .amount-cell {
@@ -1405,14 +1420,13 @@ input:focus, select:focus {
   justify-content: flex-end;
   gap: 3px;
   width: 100%;
-  height: 18px;
+  height: 24px;
   box-sizing: border-box;
   padding: 0 8px;
-  margin: 0 -8px;
+  margin: 0;
   border-radius: 6px;
   vertical-align: middle;
   cursor: text;
-  position: relative;
 }
 .inline-amount-input {
   all: unset;
@@ -1420,7 +1434,8 @@ input:focus, select:focus {
   -webkit-appearance: none;
   -moz-appearance: none;
   box-sizing: border-box;
-  height: 18px !important;
+  height: 24px !important;
+  line-height: 24px !important;
   text-align: right;
   font-size: 13.5px;
   font-family: var(--font-body);
@@ -1435,10 +1450,11 @@ input:focus, select:focus {
   margin: 0;
 }
 .inline-amount-input[type=number] { -moz-appearance: textfield; }
-.amount-suffix { color: var(--ink-soft); font-size: 13px; flex-shrink: 0; height: 18px; line-height: 18px; display: inline-flex; align-items: center; }
+.amount-suffix { color: var(--ink-soft); font-size: 13px; flex-shrink: 0; height: 24px; line-height: 24px; }
 .inline-note-input::placeholder { color: var(--ink-soft); opacity: 0.7; }
 .inline-date-input:hover, .inline-note-input:hover, .amount-cell:hover { background: var(--neutral-hover); }
 .inline-date-input:focus, .inline-note-input:focus, .amount-cell:focus-within { outline: 2px solid var(--wine); background: #fff; }
+
 
 /* ---------- Pied de page ---------- */
 .app-footer {
