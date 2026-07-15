@@ -585,10 +585,11 @@ function renderDashboard() {
     recent.forEach(t => {
       const cat = catById(t.categoryId);
       const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
+      const devLabel = deviceLabel(t.savingsDeviceId);
       const item = document.createElement("div");
       item.className = "mini-item";
       item.innerHTML = `
-        <span><span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>${proj ? `<span class="cat-tag" style="margin-left:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${t.note || ""}</span>
+        <span><span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>${proj ? `<span class="cat-tag" style="margin-left:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${devLabel ? `<span class="cat-tag" style="margin-left:4px;">🏦 ${escapeAttr(devLabel)}</span>` : ""}${t.note || ""}</span>
         <span class="amt ${t.amount >= 0 ? "income" : ""}">${moneySigned(t.amount)}</span>`;
       recentList.appendChild(item);
     });
@@ -706,11 +707,28 @@ function renderTxProjectOptions() {
   }
 }
 
+function renderTxDeviceOptions() {
+  const select = document.getElementById("txDevice");
+  const prevValue = select.value;
+  const customDevices = state.savingsDevices || [];
+  select.innerHTML = `
+    <option value="la">Livret A</option>
+    <option value="vie">Assurance Vie</option>
+    <option value="doca">DOCA — Épargne salariale</option>` +
+    customDevices.map(d => `<option value="${d.id}">${escapeAttr(d.name)}</option>`).join("");
+  if (prevValue && [...select.options].some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  } else {
+    select.value = "la";
+  }
+}
+
 function updateTxProjectVisibility() {
   const row = document.getElementById("txProjectRow");
   const catId = document.getElementById("txCategory").value;
   if (catId === "epargne") {
     renderTxProjectOptions();
+    renderTxDeviceOptions();
     row.style.display = "";
   } else {
     row.style.display = "none";
@@ -724,6 +742,41 @@ document.querySelectorAll('input[name="txSign"]').forEach(el => {
   el.addEventListener("change", renderCategorySelect);
 });
 
+/* ---------------- Épargne : lien opération ↔ dispositif (LA / VIE / DOCA / perso) ---------------- */
+function monthDateKey(dateStr) {
+  return `${dateStr.slice(0, 7)}-01`;
+}
+
+function getOrCreateSavingsSnapshot(monthDate) {
+  state.savings = state.savings || [];
+  let snap = state.savings.find(s => s.date === monthDate);
+  if (!snap) {
+    snap = { id: uid(), date: monthDate, la: 0, vie: 0, doca: 0, extra: {} };
+    state.savings.push(snap);
+  }
+  if (!snap.extra) snap.extra = {};
+  return snap;
+}
+
+function adjustSavingsDevice(monthDate, deviceKey, delta) {
+  if (!deviceKey || !delta) return;
+  const snap = getOrCreateSavingsSnapshot(monthDate);
+  if (deviceKey === "la" || deviceKey === "vie" || deviceKey === "doca") {
+    snap[deviceKey] = Math.max(0, (snap[deviceKey] || 0) + delta);
+  } else {
+    snap.extra[deviceKey] = Math.max(0, (snap.extra[deviceKey] || 0) + delta);
+  }
+}
+
+function deviceLabel(deviceKey) {
+  if (!deviceKey) return null;
+  if (deviceKey === "la") return "Livret A";
+  if (deviceKey === "vie") return "Assurance Vie";
+  if (deviceKey === "doca") return "DOCA";
+  const d = (state.savingsDevices || []).find(dv => dv.id === deviceKey);
+  return d ? d.name : null;
+}
+
 txForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const date = document.getElementById("txDate").value;
@@ -735,11 +788,15 @@ txForm.addEventListener("submit", (e) => {
   if (!date || !rawAmount || rawAmount <= 0 || !categoryId) return;
   const amount = sign === "expense" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
   const projectId = categoryId === "epargne" ? (document.getElementById("txProject").value || null) : null;
+  const savingsDeviceId = categoryId === "epargne" ? (document.getElementById("txDevice").value || null) : null;
 
-  state.transactions.push({ id: uid(), date, amount, categoryId, note, projectId });
+  state.transactions.push({ id: uid(), date, amount, categoryId, note, projectId, savingsDeviceId });
   if (projectId) {
     const proj = state.projects.find(p => p.id === projectId);
     if (proj) proj.saved = (proj.saved || 0) + Math.abs(amount);
+  }
+  if (savingsDeviceId) {
+    adjustSavingsDevice(monthDateKey(date), savingsDeviceId, Math.abs(amount));
   }
   saveState();
 
@@ -757,6 +814,7 @@ txForm.addEventListener("submit", (e) => {
   // Si l'opération concerne le mois affiché, on rafraîchit le tableau de bord
   if (date.startsWith(monthKey(currentMonth))) renderDashboard();
   renderHistory();
+  renderSavings();
 });
 
 /* ---------------- Catégories ---------------- */
@@ -922,10 +980,12 @@ function renderHistory() {
       .join("");
     const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
     const projBadge = proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : "";
+    const devLabelHist = deviceLabel(t.savingsDeviceId);
+    const devBadge = devLabelHist ? `<span class="cat-tag" style="margin-right:4px;">🏦 ${escapeAttr(devLabelHist)}</span>` : "";
     tr.innerHTML = `
       <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
       <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
-      <td>${projBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
+      <td>${projBadge}${devBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
       <td class="num"><span class="amount-cell"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"><span class="amount-suffix">€</span></span></td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
@@ -941,14 +1001,26 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
   const t = state.transactions.find(tx => tx.id === txId);
   if (!t) return;
   if (e.target.classList.contains("inline-cat-select")) {
-    if (t.projectId && e.target.value !== "epargne") {
-      const proj = state.projects.find(p => p.id === t.projectId);
-      if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
-      t.projectId = null;
+    if (e.target.value !== "epargne") {
+      if (t.projectId) {
+        const proj = state.projects.find(p => p.id === t.projectId);
+        if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
+        t.projectId = null;
+      }
+      if (t.savingsDeviceId) {
+        adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount));
+        t.savingsDeviceId = null;
+      }
     }
     t.categoryId = e.target.value;
   } else if (e.target.classList.contains("inline-date-input")) {
-    if (e.target.value) t.date = e.target.value;
+    if (e.target.value) {
+      if (t.savingsDeviceId) {
+        adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount));
+        adjustSavingsDevice(monthDateKey(e.target.value), t.savingsDeviceId, Math.abs(t.amount));
+      }
+      t.date = e.target.value;
+    }
   } else if (e.target.classList.contains("inline-note-input")) {
     t.note = e.target.value.trim();
   } else if (e.target.classList.contains("inline-amount-input")) {
@@ -958,12 +1030,16 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
         const proj = state.projects.find(p => p.id === t.projectId);
         if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount) + Math.abs(val));
       }
+      if (t.savingsDeviceId) {
+        adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount) + Math.abs(val));
+      }
       t.amount = val;
     }
   }
   saveState();
   renderHistory();
   renderDashboard();
+  renderSavings();
 });
 
 document.getElementById("historyBody").addEventListener("click", (e) => {
@@ -975,10 +1051,14 @@ document.getElementById("historyBody").addEventListener("click", (e) => {
     const proj = state.projects.find(p => p.id === t.projectId);
     if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
   }
+  if (t && t.savingsDeviceId) {
+    adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount));
+  }
   state.transactions = state.transactions.filter(t => t.id !== id);
   saveState();
   renderHistory();
   renderDashboard();
+  renderSavings();
 });
 
 /* ---------------- Mes projets ---------------- */
@@ -1908,9 +1988,10 @@ document.getElementById("gaugesContainer").addEventListener("click", (e) => {
   list.innerHTML = txs.length
     ? txs.map(t => {
         const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
+        const devLabelGauge = deviceLabel(t.savingsDeviceId);
         return `
         <div class="mini-item">
-          <span>${proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${t.note || "Sans note"}</span>
+          <span>${proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${devLabelGauge ? `<span class="cat-tag" style="margin-right:4px;">🏦 ${escapeAttr(devLabelGauge)}</span>` : ""}${t.note || "Sans note"}</span>
           <span class="amt">${moneySigned(t.amount)}</span>
         </div>`;
       }).join("")
