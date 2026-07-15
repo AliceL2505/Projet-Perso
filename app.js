@@ -51,28 +51,6 @@ function cloneDefaultCategories() {
 
 let activeProfileId = getActiveProfileId();
 
-let kpi4Choice = localStorage.getItem("oseille_kpi4_choice") || "epargne";
-
-document.getElementById("kpi4Card").addEventListener("click", (e) => {
-  if (e.target.closest("[data-kpi4]")) return;
-  const menu = document.getElementById("kpi4Menu");
-  menu.querySelectorAll("[data-kpi4]").forEach(b => b.classList.toggle("active", b.dataset.kpi4 === kpi4Choice));
-  menu.classList.toggle("open");
-});
-document.addEventListener("click", (e) => {
-  if (!e.target.closest("#kpi4Card")) {
-    document.getElementById("kpi4Menu").classList.remove("open");
-  }
-});
-document.getElementById("kpi4Menu").addEventListener("click", (e) => {
-  const choice = e.target.dataset.kpi4;
-  if (!choice) return;
-  kpi4Choice = choice;
-  localStorage.setItem("oseille_kpi4_choice", choice);
-  document.getElementById("kpi4Menu").classList.remove("open");
-  renderDashboard();
-});
-
 document.getElementById("kpiSoldeInfoBtn")?.addEventListener("click", (e) => {
   e.stopPropagation();
   const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -535,22 +513,9 @@ function renderDashboard() {
   animateKpi("kpiRemaining", income - expense, moneyRemaining);
   document.getElementById("kpiRemainingCard").classList.toggle("is-negative", (income - expense) < 0);
 
-  const recurringTotal = detectRecurringExpenses().reduce((s, u) => s + u.amount, 0);
-  const soldeInfoBtn = document.getElementById("kpiSoldeInfoBtn");
-  if (kpi4Choice === "recurring") {
-    document.getElementById("kpi4Label").childNodes[0].textContent = "Prélèvements habituels à venir";
-    if (soldeInfoBtn) soldeInfoBtn.style.display = "none";
-    animateKpi("kpiSaved", -recurringTotal, money);
-  } else if (kpi4Choice === "solde") {
-    document.getElementById("kpi4Label").childNodes[0].textContent = "Solde compte courant";
-    if (soldeInfoBtn) soldeInfoBtn.style.display = "";
-    const soldeCourant = computeMonthlyTrackingGrandTotal();
-    animateKpi("kpiSaved", soldeCourant, money);
-  } else {
-    document.getElementById("kpi4Label").childNodes[0].textContent = "Épargné ce mois";
-    if (soldeInfoBtn) soldeInfoBtn.style.display = "none";
-    animateKpi("kpiSaved", saved, moneySigned);
-  }
+  document.getElementById("kpi4Label").childNodes[0].textContent = "Solde compte courant";
+  const soldeCourant = computeMonthlyTrackingGrandTotal();
+  animateKpi("kpiSaved", soldeCourant, money);
 
   const totalBudget = state.categories
     .filter(c => c.type === "expense" && c.budget > 0)

@@ -687,33 +687,6 @@ body.hide-amounts input[data-saved-for]:focus {
 .kpi-remaining.is-negative { background: #A6402F; border-color: #A6402F; }
 .kpi-configurable { position: relative; cursor: pointer; }
 .kpi-configurable .kpi-label { text-decoration: underline dotted; text-underline-offset: 3px; }
-.kpi4-menu {
-  display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  min-width: 220px;
-  z-index: 20;
-}
-.kpi4-menu.open { display: block; }
-.kpi4-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 10px 14px;
-  font-size: 12.5px;
-  color: var(--ink);
-  cursor: pointer;
-}
-.kpi4-menu button:hover { background: var(--neutral-hover); }
-.kpi4-menu button.active { font-weight: 700; color: var(--wine); }
 .kpi-info-btn {
   all: unset;
   box-sizing: border-box;
@@ -794,9 +767,9 @@ body.hide-amounts input[data-saved-for]:focus {
   margin-top: 28px;
 }
 .dashboard-gauges-col { flex: 1 1 460px; min-width: 0; max-width: 780px; }
+.dashboard-chart-col { flex: 1 1 340px; min-width: 0; max-width: 380px; }
+.dashboard-chart-col .section-title { margin-top: 0; }
 .chart-card {
-  flex: 1 1 340px;
-  max-width: 380px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -806,7 +779,6 @@ body.hide-amounts input[data-saved-for]:focus {
   flex-direction: column;
   align-items: center;
 }
-.chart-card .section-title { margin-top: 0; align-self: flex-start; }
 .chart-card canvas { max-width: 260px; max-height: 260px; }
 .savings-chart-card { flex: none; width: 100%; max-width: 780px; align-items: stretch; margin-bottom: 12px; }
 .savings-chart-card canvas { max-width: 100%; max-height: 320px; width: 100% !important; height: 260px !important; }
@@ -1537,5 +1509,5 @@ input:focus, select:focus {
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
   .field-row { flex-direction: column; }
   .sidebar-title h1 { font-size: 17px; }
-  .chart-card { flex-basis: 100%; }
+  .dashboard-chart-col { flex-basis: 100%; }
 }

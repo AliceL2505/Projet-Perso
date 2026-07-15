@@ -312,14 +312,9 @@
             <span class="kpi-label">Reste à vivre</span>
             <span class="kpi-value" id="kpiRemaining">0 €</span>
           </div>
-          <div class="kpi kpi-peony kpi-configurable" id="kpi4Card">
-            <span class="kpi-label" id="kpi4Label">Épargné ce mois<button type="button" class="kpi-info-btn" id="kpiSoldeInfoBtn" aria-label="Date du solde" style="display:none;">i</button></span>
+          <div class="kpi kpi-peony" id="kpi4Card">
+            <span class="kpi-label" id="kpi4Label">Solde compte courant<button type="button" class="kpi-info-btn" id="kpiSoldeInfoBtn" aria-label="Date du solde">i</button></span>
             <span class="kpi-value" id="kpiSaved">0 €</span>
-            <div class="kpi4-menu" id="kpi4Menu">
-              <button type="button" data-kpi4="epargne">Épargné ce mois</button>
-              <button type="button" data-kpi4="recurring">Prélèvements habituels à venir</button>
-              <button type="button" data-kpi4="solde">Solde compte courant</button>
-            </div>
             <div class="kpi-solde-popover" id="kpiSoldePopover">
               <p id="soldeInfoText" style="margin:0; font-size:12.5px; color:var(--ink-soft); line-height:1.5;"></p>
             </div>
@@ -339,10 +334,12 @@
               </div>
             </div>
           </div>
-          <div class="chart-card">
+          <div class="dashboard-chart-col">
             <h2 class="section-title">Répartition des dépenses</h2>
-            <canvas id="expensePie" width="220" height="220"></canvas>
-            <div class="pie-legend" id="pieLegend"></div>
+            <div class="chart-card">
+              <canvas id="expensePie" width="220" height="220"></canvas>
+              <div class="pie-legend" id="pieLegend"></div>
+            </div>
           </div>
         </div>
 
