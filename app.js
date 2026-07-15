@@ -80,7 +80,10 @@ document.addEventListener("click", (e) => {
   }
 });
 
-document.getElementById("openTxModalCard").addEventListener("click", () => openModal("txModalOverlay"));
+document.getElementById("openTxModalCard").addEventListener("click", () => {
+  renderCategorySelect();
+  openModal("txModalOverlay");
+});
 document.getElementById("openImportModalCard").addEventListener("click", () => openModal("importModalOverlay"));
 document.getElementById("openCatModalCard").addEventListener("click", () => openModal("catModalOverlay"));
 document.getElementById("openProjectModalCard").addEventListener("click", () => openModal("projectModalOverlay"));
@@ -581,10 +584,11 @@ function renderDashboard() {
   } else {
     recent.forEach(t => {
       const cat = catById(t.categoryId);
+      const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
       const item = document.createElement("div");
       item.className = "mini-item";
       item.innerHTML = `
-        <span><span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>${t.note || ""}</span>
+        <span><span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>${proj ? `<span class="cat-tag" style="margin-left:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${t.note || ""}</span>
         <span class="amt ${t.amount >= 0 ? "income" : ""}">${moneySigned(t.amount)}</span>`;
       recentList.appendChild(item);
     });
@@ -688,7 +692,33 @@ function renderCategorySelect() {
   if (prevValue && [...select.options].some(o => o.value === prevValue)) {
     select.value = prevValue;
   }
+  updateTxProjectVisibility();
 }
+
+function renderTxProjectOptions() {
+  const select = document.getElementById("txProject");
+  const prevValue = select.value;
+  const sorted = [...state.projects].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  select.innerHTML = `<option value="">Épargne libre (aucun projet)</option>` +
+    sorted.map(p => `<option value="${p.id}">${escapeAttr(p.name)}</option>`).join("");
+  if (prevValue && [...select.options].some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  }
+}
+
+function updateTxProjectVisibility() {
+  const row = document.getElementById("txProjectRow");
+  const catId = document.getElementById("txCategory").value;
+  if (catId === "epargne") {
+    renderTxProjectOptions();
+    row.style.display = "";
+  } else {
+    row.style.display = "none";
+    document.getElementById("txProject").value = "";
+  }
+}
+
+document.getElementById("txCategory").addEventListener("change", updateTxProjectVisibility);
 
 document.querySelectorAll('input[name="txSign"]').forEach(el => {
   el.addEventListener("change", renderCategorySelect);
@@ -704,8 +734,13 @@ txForm.addEventListener("submit", (e) => {
 
   if (!date || !rawAmount || rawAmount <= 0 || !categoryId) return;
   const amount = sign === "expense" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+  const projectId = categoryId === "epargne" ? (document.getElementById("txProject").value || null) : null;
 
-  state.transactions.push({ id: uid(), date, amount, categoryId, note });
+  state.transactions.push({ id: uid(), date, amount, categoryId, note, projectId });
+  if (projectId) {
+    const proj = state.projects.find(p => p.id === projectId);
+    if (proj) proj.saved = (proj.saved || 0) + Math.abs(amount);
+  }
   saveState();
 
   const feedback = document.getElementById("txFeedback");
@@ -885,10 +920,12 @@ function renderHistory() {
     const catOptions = sortedCategories()
       .map(c => `<option value="${c.id}" ${c.id === t.categoryId ? "selected" : ""}>${catLabel(c)}</option>`)
       .join("");
+    const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
+    const projBadge = proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : "";
     tr.innerHTML = `
       <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
       <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
-      <td><input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
+      <td>${projBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
       <td class="num"><span class="amount-cell"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"><span class="amount-suffix">€</span></span></td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
@@ -904,6 +941,11 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
   const t = state.transactions.find(tx => tx.id === txId);
   if (!t) return;
   if (e.target.classList.contains("inline-cat-select")) {
+    if (t.projectId && e.target.value !== "epargne") {
+      const proj = state.projects.find(p => p.id === t.projectId);
+      if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
+      t.projectId = null;
+    }
     t.categoryId = e.target.value;
   } else if (e.target.classList.contains("inline-date-input")) {
     if (e.target.value) t.date = e.target.value;
@@ -911,7 +953,13 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
     t.note = e.target.value.trim();
   } else if (e.target.classList.contains("inline-amount-input")) {
     const val = parseFloat(e.target.value);
-    if (!isNaN(val)) t.amount = val;
+    if (!isNaN(val)) {
+      if (t.projectId) {
+        const proj = state.projects.find(p => p.id === t.projectId);
+        if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount) + Math.abs(val));
+      }
+      t.amount = val;
+    }
   }
   saveState();
   renderHistory();
@@ -922,6 +970,11 @@ document.getElementById("historyBody").addEventListener("click", (e) => {
   const id = e.target.dataset.deleteTx;
   if (!id) return;
   if (!confirm("Supprimer cette opération ?")) return;
+  const t = state.transactions.find(tx => tx.id === id);
+  if (t && t.projectId) {
+    const proj = state.projects.find(p => p.id === t.projectId);
+    if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
+  }
   state.transactions = state.transactions.filter(t => t.id !== id);
   saveState();
   renderHistory();
@@ -1853,11 +1906,14 @@ document.getElementById("gaugesContainer").addEventListener("click", (e) => {
   document.getElementById("gaugeModalTitle").textContent = cat ? catLabel(cat) : "Catégorie";
   const list = document.getElementById("gaugeModalList");
   list.innerHTML = txs.length
-    ? txs.map(t => `
+    ? txs.map(t => {
+        const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
+        return `
         <div class="mini-item">
-          <span>${t.note || "Sans note"}</span>
+          <span>${proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${t.note || "Sans note"}</span>
           <span class="amt">${moneySigned(t.amount)}</span>
-        </div>`).join("")
+        </div>`;
+      }).join("")
     : `<p class="empty-state">Aucune opération dans cette catégorie ce mois-ci.</p>`;
 
   document.getElementById("gaugeModalOverlay").classList.add("open");
