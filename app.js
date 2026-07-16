@@ -987,12 +987,21 @@ function renderHistory() {
   renderHistoryFilterOptions();
   const filterValue = document.getElementById("historyFilter").value;
   const searchValue = document.getElementById("historySearch").value.trim().toLowerCase();
-  const txs = transactionsForMonth(currentMonth)
+  const allMonths = document.getElementById("historyAllMonths")?.checked;
+  const titleEl = document.querySelector("#panel-add .history-header .section-title");
+  if (titleEl) titleEl.textContent = allMonths ? "Historique (toutes les périodes)" : "Historique du mois";
+  const baseTxs = allMonths ? state.transactions.slice() : transactionsForMonth(currentMonth);
+  const txs = baseTxs
     .filter(t => filterValue === "all" || t.categoryId === filterValue)
     .filter(t => {
       if (!searchValue) return true;
       const cat = catById(t.categoryId);
-      const haystack = `${t.note || ""} ${cat ? catLabel(cat) : ""}`.toLowerCase();
+      const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
+      const dev = deviceLabel(t.savingsDeviceId);
+      // On inclut le projet et le dispositif liés dans la recherche : un versement
+      // épargne rattaché à un projet doit être trouvable même si son nom n'a pas
+      // été tapé dans la note, pour ne plus jamais perdre la trace d'une opération.
+      const haystack = `${t.note || ""} ${cat ? catLabel(cat) : ""} ${proj ? proj.name : ""} ${dev || ""}`.toLowerCase();
       return haystack.includes(searchValue);
     })
     // On part de l'ordre d'ajout (les plus récentes en dernier dans le tableau de données),
@@ -1027,6 +1036,7 @@ function renderHistory() {
 
 document.getElementById("historyFilter").addEventListener("change", renderHistory);
 document.getElementById("historySearch").addEventListener("input", renderHistory);
+document.getElementById("historyAllMonths")?.addEventListener("change", renderHistory);
 
 document.getElementById("historyBody").addEventListener("change", (e) => {
   const txId = e.target.dataset.txId;
