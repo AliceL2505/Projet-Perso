@@ -51,41 +51,6 @@ function cloneDefaultCategories() {
 
 let activeProfileId = getActiveProfileId();
 
-document.getElementById("kpiSoldeInfoBtn")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-  const infoText = document.getElementById("soldeInfoText");
-  const anchor = state.soldeCourant;
-  if (infoText) {
-    if (anchor && anchor.date) {
-      const [y, m, d] = anchor.date.split("-");
-      infoText.textContent = `Calculé à partir de ton solde vérifié le ${d}/${m}/${y} (${money(anchor.amount)}), plus tes opérations enregistrées depuis. Mets-le à jour dès que tu vérifies ton vrai solde bancaire, pour éviter tout écart.`;
-    } else {
-      infoText.textContent = `Aucun solde de référence enregistré : le montant est pour l'instant le cumul de toutes tes opérations de l'année en cours, au ${today}. Renseigne ci-dessous ton vrai solde bancaire pour un calcul plus fiable.`;
-    }
-  }
-  const dateInput = document.getElementById("soldeAnchorDate");
-  const amountInput = document.getElementById("soldeAnchorAmount");
-  if (dateInput) dateInput.value = (anchor && anchor.date) ? anchor.date : new Date().toISOString().slice(0, 10);
-  if (amountInput) amountInput.value = (anchor && anchor.amount) ? anchor.amount : "";
-  document.getElementById("kpiSoldePopover").classList.toggle("open");
-});
-document.getElementById("soldeAnchorSave")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  const date = document.getElementById("soldeAnchorDate").value;
-  const amount = parseFloat(document.getElementById("soldeAnchorAmount").value);
-  if (!date || isNaN(amount)) return;
-  state.soldeCourant = { amount, date };
-  saveState();
-  document.getElementById("kpiSoldePopover").classList.remove("open");
-  renderDashboard();
-});
-document.addEventListener("click", (e) => {
-  if (!e.target.closest("#kpi4Card")) {
-    document.getElementById("kpiSoldePopover")?.classList.remove("open");
-  }
-});
-
 /* ---------------- Système générique de pop-in (modales) ---------------- */
 function openModal(id) { document.getElementById(id).classList.add("open"); }
 function closeModal(id) { document.getElementById(id).classList.remove("open"); }
@@ -539,7 +504,7 @@ function renderDashboard() {
   document.getElementById("kpiRemainingCard").classList.toggle("is-negative", (income - expense) < 0);
 
   document.getElementById("kpi4Label").childNodes[0].textContent = "Solde compte courant";
-  const soldeCourant = computeSoldeCourant();
+  const soldeCourant = computeMonthlyTrackingGrandTotal();
   animateKpi("kpiSaved", soldeCourant, money);
 
   const totalBudget = state.categories
@@ -1805,20 +1770,6 @@ function computeMonthlyTrackingGrandTotal() {
   return state.transactions
     .filter(t => t.date.startsWith(latestYear + "-"))
     .reduce((s, t) => s + t.amount, 0);
-}
-
-// Solde compte courant réel : si un point de référence vérifié a été renseigné
-// (via le bouton "i" sur la case du tableau de bord), on part de ce solde constaté
-// et on ajoute uniquement les opérations enregistrées depuis cette date — ce qui
-// évite tout écart avec ton vrai solde bancaire. Sans référence, on retombe sur
-// l'ancien calcul (cumul de l'année en cours).
-function computeSoldeCourant() {
-  const anchor = state.soldeCourant;
-  if (!anchor || !anchor.date) return computeMonthlyTrackingGrandTotal();
-  const since = state.transactions
-    .filter(t => t.date > anchor.date)
-    .reduce((s, t) => s + t.amount, 0);
-  return anchor.amount + since;
 }
 
 function renderMonthlyPivot() {
