@@ -155,6 +155,7 @@
     <button class="tab" data-tab="add"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span class="tab-label">Opérations</span></button>
     <button class="tab" data-tab="categories"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3h6a2 2 0 0 1 2 2v6L9.5 20.5a2 2 0 0 1-2.8 0l-4.2-4.2a2 2 0 0 1 0-2.8L11 3Z"/><circle cx="15" cy="8" r="1.4" fill="currentColor" stroke="none"/></svg><span class="tab-label">Catégories</span></button>
     <button class="tab" data-tab="projects"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 11C8.5 11 6 8.5 6 5c3.5 0 6 2.5 6 6Z"/><path d="M12 11c3.5 0 6-2.5 6-6-3.5 0-6 2.5-6 6Z"/></svg><span class="tab-label">Mes projets</span></button>
+    <button class="tab" data-tab="budgets"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18"/><path d="M7.5 14.5h4"/></svg><span class="tab-label">Mes budgets</span></button>
     <div class="sidebar-divider"></div>
     <p class="sidebar-group-label tab-label">Analyse</p>
     <button class="tab" data-tab="monthly"><svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3.5 10h17"/></svg><span class="tab-label">Résumé mensuel</span></button>
@@ -424,6 +425,15 @@
                 <select id="txCategory" required></select>
               </label>
 
+              <div id="txBudgetRow" style="display:none;">
+                <label>Budget lié (optionnel)
+                  <select id="txBudget">
+                    <option value="">Aucun budget</option>
+                  </select>
+                </label>
+                <p class="hint" style="margin:-8px 0 14px;">Relie cette dépense à un budget pour suivre combien te coûte un évènement (visible dans « Mes budgets »).</p>
+              </div>
+
               <div id="txProjectRow" style="display:none;">
                 <label>Projet lié (optionnel)
                   <select id="txProject">
@@ -575,6 +585,45 @@
                 <input type="text" id="projNote" placeholder="Ex : Croatie avec Marion">
               </label>
               <button type="submit" class="btn-secondary" id="projectFormSubmitBtn">Créer le projet</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- MES BUDGETS -->
+      <section class="tab-panel" id="panel-budgets">
+        <div class="history-header">
+          <div>
+            <h2 class="section-title" style="margin-top:0;">Mes budgets</h2>
+            <p class="project-subtitle">Pour savoir combien t'a vraiment coûté un évènement ou une envie</p>
+          </div>
+          <button type="button" class="btn-primary btn-wine" id="openBudgetModalCard">+ Nouveau budget</button>
+        </div>
+        <p class="hint">Crée un budget (ex : « Mariage HM », « Vacances Croatie »), puis relie tes opérations à ce budget en les ajoutant — le coût total se met à jour tout seul ici.</p>
+        <div class="project-list" id="budgetList"></div>
+
+        <div class="modal-overlay" id="budgetModalOverlay">
+          <div class="modal-card">
+            <button type="button" class="modal-close" aria-label="Fermer">✕</button>
+            <h2 class="section-title" style="margin-top:0;" id="budgetModalTitle">Nouveau budget</h2>
+            <form id="budgetForm" class="form-card" style="box-shadow:none; border:none; padding:0; max-width:none;">
+              <div class="field-row">
+                <label>Nom du budget
+                  <input type="text" id="budgetName" placeholder="Ex : Mariage HM" required>
+                </label>
+                <label>Montant prévu (optionnel, €)
+                  <input type="number" id="budgetTarget" min="0" step="1" placeholder="500">
+                </label>
+              </div>
+              <div class="field-row">
+                <label>Date (optionnel)
+                  <input type="date" id="budgetDate">
+                </label>
+                <label>Note (optionnel)
+                  <input type="text" id="budgetNote" placeholder="Ex : robe, cadeau, transport...">
+                </label>
+              </div>
+              <button type="submit" class="btn-secondary" id="budgetFormSubmitBtn">Créer le budget</button>
             </form>
           </div>
         </div>

@@ -174,6 +174,7 @@ function loadState(profileId) {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (!parsed.projects) parsed.projects = [];
+      if (!parsed.budgets) parsed.budgets = [];
       if (!parsed.savings) parsed.savings = SEED_SAVINGS.map(s => ({ ...s, id: uid() }));
       if (!parsed.savingsDevices) parsed.savingsDevices = [];
       if (!parsed.credits) parsed.credits = [];
@@ -199,6 +200,7 @@ function loadState(profileId) {
       categories: cloneDefaultCategories(),
       transactions: seeded,
       projects: [],
+      budgets: [],
       savings: SEED_SAVINGS.map(s => ({ ...s, id: uid() })),
       savingsDevices: [],
       credits: [],
@@ -214,6 +216,7 @@ function loadState(profileId) {
       categories: LOUISE_CATEGORIES.map(c => ({ ...c })),
       transactions: seeded,
       projects: [],
+      budgets: [],
       savings: [],
       savingsDevices: [],
       credits: [],
@@ -227,6 +230,7 @@ function loadState(profileId) {
     categories: cloneDefaultCategories(),
     transactions: seeded,
     projects: [],
+    budgets: [],
     savings: [],
     savingsDevices: [],
     credits: [],
@@ -385,6 +389,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn.dataset.tab === "yearly") renderYearlyComparison();
   if (btn.dataset.tab === "monthly") renderMonthlyPivot();
   if (btn.dataset.tab === "projects") renderProjects();
+  if (btn.dataset.tab === "budgets") renderBudgets();
   if (btn.dataset.tab === "savings") renderSavings();
   if (btn.dataset.tab === "credits") renderCredits();
 });
@@ -573,10 +578,11 @@ function renderDashboard() {
       const cat = catById(t.categoryId);
       const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
       const devLabel = deviceLabel(t.savingsDeviceId);
+      const budgLabel = budgetLabel(t.budgetId);
       const item = document.createElement("div");
       item.className = "mini-item";
       item.innerHTML = `
-        <span><span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>${proj ? `<span class="cat-tag" style="margin-left:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${devLabel ? `<span class="cat-tag" style="margin-left:4px;">🏦 ${escapeAttr(devLabel)}</span>` : ""}${t.note || ""}</span>
+        <span><span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>${proj ? `<span class="cat-tag" style="margin-left:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${devLabel ? `<span class="cat-tag" style="margin-left:4px;">🏦 ${escapeAttr(devLabel)}</span>` : ""}${budgLabel ? `<span class="cat-tag" style="margin-left:4px;">🏷️ ${escapeAttr(budgLabel)}</span>` : ""}${t.note || ""}</span>
         <span class="amt ${t.amount >= 0 ? "income" : ""}">${moneySigned(t.amount)}</span>`;
       recentList.appendChild(item);
     });
@@ -721,6 +727,33 @@ function updateTxProjectVisibility() {
     row.style.display = "none";
     document.getElementById("txProject").value = "";
   }
+  updateTxBudgetVisibility();
+}
+
+/* ---------------- Mes budgets : lien opération ↔ budget (coût d'un évènement/projet) ---------------- */
+function renderTxBudgetOptions() {
+  const select = document.getElementById("txBudget");
+  const prevValue = select.value;
+  const sorted = [...state.budgets].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  select.innerHTML = `<option value="">Aucun budget</option>` +
+    sorted.map(b => `<option value="${b.id}">${escapeAttr(b.name)}</option>`).join("");
+  if (prevValue && [...select.options].some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  }
+}
+
+function updateTxBudgetVisibility() {
+  const row = document.getElementById("txBudgetRow");
+  if (!row) return;
+  const sign = document.querySelector('input[name="txSign"]:checked')?.value || "expense";
+  const catId = document.getElementById("txCategory").value;
+  if (sign === "expense" && catId !== "epargne") {
+    renderTxBudgetOptions();
+    row.style.display = "";
+  } else {
+    row.style.display = "none";
+    document.getElementById("txBudget").value = "";
+  }
 }
 
 document.getElementById("txCategory").addEventListener("change", updateTxProjectVisibility);
@@ -776,8 +809,9 @@ txForm.addEventListener("submit", (e) => {
   const amount = sign === "expense" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
   const projectId = categoryId === "epargne" ? (document.getElementById("txProject").value || null) : null;
   const savingsDeviceId = categoryId === "epargne" ? (document.getElementById("txDevice").value || null) : null;
+  const budgetId = (sign === "expense" && categoryId !== "epargne") ? (document.getElementById("txBudget").value || null) : null;
 
-  state.transactions.push({ id: uid(), date, amount, categoryId, note, projectId, savingsDeviceId });
+  state.transactions.push({ id: uid(), date, amount, categoryId, note, projectId, savingsDeviceId, budgetId });
   if (projectId) {
     const proj = state.projects.find(p => p.id === projectId);
     if (proj) proj.saved = (proj.saved || 0) + Math.abs(amount);
@@ -998,10 +1032,11 @@ function renderHistory() {
       const cat = catById(t.categoryId);
       const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
       const dev = deviceLabel(t.savingsDeviceId);
-      // On inclut le projet et le dispositif liés dans la recherche : un versement
-      // épargne rattaché à un projet doit être trouvable même si son nom n'a pas
-      // été tapé dans la note, pour ne plus jamais perdre la trace d'une opération.
-      const haystack = `${t.note || ""} ${cat ? catLabel(cat) : ""} ${proj ? proj.name : ""} ${dev || ""}`.toLowerCase();
+      const budg = budgetLabel(t.budgetId);
+      // On inclut le projet, le dispositif et le budget liés dans la recherche : une
+      // opération rattachée doit être trouvable même si son nom n'a pas été tapé
+      // dans la note, pour ne plus jamais perdre la trace d'une opération.
+      const haystack = `${t.note || ""} ${cat ? catLabel(cat) : ""} ${proj ? proj.name : ""} ${dev || ""} ${budg || ""}`.toLowerCase();
       return haystack.includes(searchValue);
     })
     // On part de l'ordre d'ajout (les plus récentes en dernier dans le tableau de données),
@@ -1024,10 +1059,12 @@ function renderHistory() {
     const projBadge = proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : "";
     const devLabelHist = deviceLabel(t.savingsDeviceId);
     const devBadge = devLabelHist ? `<span class="cat-tag" style="margin-right:4px;">🏦 ${escapeAttr(devLabelHist)}</span>` : "";
+    const budgLabelHist = budgetLabel(t.budgetId);
+    const budgBadge = budgLabelHist ? `<span class="cat-tag" style="margin-right:4px;">🏷️ ${escapeAttr(budgLabelHist)}</span>` : "";
     tr.innerHTML = `
       <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
       <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
-      <td>${projBadge}${devBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
+      <td>${projBadge}${devBadge}${budgBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
       <td class="num"><span class="amount-cell"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"><span class="amount-suffix">€</span></span></td>
       <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
@@ -1208,6 +1245,134 @@ document.getElementById("projectList").addEventListener("click", (e) => {
   state.projects = state.projects.filter(p => p.id !== id);
   saveState();
   renderProjects();
+});
+
+/* ---------------- Mes budgets (coût réel d'un évènement / d'une envie) ----------------
+   Contrairement à "Mes projets" (épargne vers un objectif), un budget ne stocke pas de
+   montant cumulé à la main : le coût affiché est recalculé à chaque rendu à partir des
+   opérations qui lui sont reliées, pour ne jamais pouvoir se désynchroniser. */
+function budgetLabel(budgetId) {
+  if (!budgetId) return null;
+  const b = state.budgets.find(x => x.id === budgetId);
+  return b ? b.name : null;
+}
+
+function computeBudgetSpent(budgetId) {
+  return state.transactions
+    .filter(t => t.budgetId === budgetId)
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
+}
+
+function renderBudgets() {
+  const list = document.getElementById("budgetList");
+  list.innerHTML = "";
+
+  if (state.budgets.length === 0) {
+    list.innerHTML = `<p class="empty-state">Aucun budget pour l'instant. Crée-en un ci-dessous, par exemple « Mariage HM » ou « Vacances Croatie ».</p>`;
+    return;
+  }
+
+  const sorted = [...state.budgets].sort((a, b) => {
+    if (a.date && b.date) return a.date.localeCompare(b.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return a.name.localeCompare(b.name, "fr");
+  });
+
+  sorted.forEach(b => {
+    const spent = computeBudgetSpent(b.id);
+    const hasTarget = b.target > 0;
+    const realPct = hasTarget ? Math.round((spent / b.target) * 100) : 0;
+    const pct = hasTarget ? Math.min(100, realPct) : 0;
+    const cls = realPct > 100 ? "over" : "ok";
+
+    let dateHtml = "";
+    if (b.date) {
+      const [y, m, d] = b.date.split("-");
+      dateHtml = `<p class="project-deadline">📅 ${d}/${m}/${y}</p>`;
+    }
+
+    const card = document.createElement("div");
+    card.className = "project-card";
+    card.innerHTML = `
+      <div class="project-top">
+        <div>
+          <div class="project-name">${escapeAttr(b.name)}</div>
+          ${b.note ? `<p class="project-note">${escapeAttr(b.note)}</p>` : ""}
+        </div>
+        <div class="project-actions">
+          <button class="icon-btn" data-edit-budget="${b.id}" aria-label="Modifier ${escapeAttr(b.name)}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="icon-btn" data-delete-budget="${b.id}" aria-label="Supprimer ${escapeAttr(b.name)}">✕</button>
+        </div>
+      </div>
+      ${hasTarget ? `
+      <div class="gauge-track">
+        <div class="gauge-fill ${cls}" style="width:${pct}%"></div>
+      </div>
+      <div class="project-figures">${money(spent)} / ${money(b.target)} (${realPct}%)</div>` : `
+      <div class="project-figures">${money(spent)} dépensés jusqu'ici</div>`}
+      ${dateHtml}`;
+    list.appendChild(card);
+  });
+}
+
+document.getElementById("openBudgetModalCard").addEventListener("click", () => {
+  editingBudgetId = null;
+  document.getElementById("budgetModalTitle").textContent = "Nouveau budget";
+  document.getElementById("budgetFormSubmitBtn").textContent = "Créer le budget";
+  document.getElementById("budgetForm").reset();
+  openModal("budgetModalOverlay");
+});
+
+let editingBudgetId = null;
+
+document.getElementById("budgetList").addEventListener("click", (e) => {
+  const editId = e.target.closest("[data-edit-budget]")?.dataset.editBudget;
+  if (editId) {
+    const b = state.budgets.find(x => x.id === editId);
+    if (!b) return;
+    editingBudgetId = editId;
+    document.getElementById("budgetModalTitle").textContent = "Modifier le budget";
+    document.getElementById("budgetFormSubmitBtn").textContent = "Enregistrer les modifications";
+    document.getElementById("budgetName").value = b.name;
+    document.getElementById("budgetTarget").value = b.target || "";
+    document.getElementById("budgetDate").value = b.date || "";
+    document.getElementById("budgetNote").value = b.note || "";
+    openModal("budgetModalOverlay");
+    return;
+  }
+  const delId = e.target.closest("[data-delete-budget]")?.dataset.deleteBudget;
+  if (!delId) return;
+  const used = state.transactions.some(t => t.budgetId === delId);
+  if (used && !confirm("Ce budget contient des opérations liées. Elles resteront enregistrées mais ne seront plus rattachées à un budget. Continuer ?")) return;
+  state.budgets = state.budgets.filter(b => b.id !== delId);
+  state.transactions.forEach(t => { if (t.budgetId === delId) t.budgetId = null; });
+  saveState();
+  renderBudgets();
+  renderHistory();
+  renderTxBudgetOptions();
+});
+
+document.getElementById("budgetForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("budgetName").value.trim();
+  const target = parseFloat(document.getElementById("budgetTarget").value) || 0;
+  const date = document.getElementById("budgetDate").value || null;
+  const note = document.getElementById("budgetNote").value.trim();
+  if (!name) return;
+
+  if (editingBudgetId) {
+    const b = state.budgets.find(x => x.id === editingBudgetId);
+    if (b) { b.name = name; b.target = target; b.date = date; b.note = note; }
+    editingBudgetId = null;
+  } else {
+    state.budgets.push({ id: uid(), name, target, date, note });
+  }
+  saveState();
+  document.getElementById("budgetForm").reset();
+  closeModal("budgetModalOverlay");
+  renderBudgets();
+  renderTxBudgetOptions();
 });
 
 /* ---------------- Crédit ---------------- */
@@ -2032,9 +2197,10 @@ document.getElementById("gaugesContainer").addEventListener("click", (e) => {
     ? txs.map(t => {
         const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
         const devLabelGauge = deviceLabel(t.savingsDeviceId);
+        const budgLabelGauge = budgetLabel(t.budgetId);
         return `
         <div class="mini-item">
-          <span>${proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${devLabelGauge ? `<span class="cat-tag" style="margin-right:4px;">🏦 ${escapeAttr(devLabelGauge)}</span>` : ""}${t.note || "Sans note"}</span>
+          <span>${proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : ""}${devLabelGauge ? `<span class="cat-tag" style="margin-right:4px;">🏦 ${escapeAttr(devLabelGauge)}</span>` : ""}${budgLabelGauge ? `<span class="cat-tag" style="margin-right:4px;">🏷️ ${escapeAttr(budgLabelGauge)}</span>` : ""}${t.note || "Sans note"}</span>
           <span class="amt">${moneySigned(t.amount)}</span>
         </div>`;
       }).join("")
