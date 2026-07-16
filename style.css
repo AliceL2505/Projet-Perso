@@ -1195,6 +1195,19 @@ input:focus, select:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+}
+.category-item .cname-edit-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  color: inherit;
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--line);
+  padding: 0;
 }
 .category-item .ctype {
   flex-shrink: 0;

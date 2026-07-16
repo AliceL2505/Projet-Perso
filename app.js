@@ -869,7 +869,7 @@ function renderCategoryList() {
       const row = document.createElement("div");
       row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
       row.innerHTML = `
-        <span class="cname">${catLabel(cat)}</span>
+        <span class="cname" data-rename-cat="${cat.id}" title="Cliquer pour renommer">${catLabel(cat)}</span>
         ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
         <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
       `;
@@ -889,7 +889,49 @@ function handleCategoryListChange(e) {
   renderDashboard();
 }
 
+// Renommage inline : clic sur le nom → champ texte à la place, sans rien changer
+// d'autre visuellement. Le nom est stocké une seule fois sur la catégorie (state.categories),
+// donc le renommer met automatiquement à jour tous les endroits où elle apparaît
+// (jauges, opérations, historique, projets, suivi épargne...).
+function startCategoryRename(span, cat) {
+  if (span.querySelector("input")) return; // déjà en cours d'édition
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "cname-edit-input";
+  input.value = cat.name;
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  const commit = () => {
+    if (done) return;
+    done = true;
+    const newName = input.value.trim();
+    if (newName && newName !== cat.name) {
+      cat.name = newName;
+      saveState();
+    }
+    renderCategoryList();
+    renderCategorySelect();
+    renderDashboard();
+    renderHistory();
+  };
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+    else if (e.key === "Escape") { input.value = cat.name; input.blur(); }
+  });
+  input.addEventListener("blur", commit);
+}
+
 function handleCategoryListClick(e) {
+  const renameSpan = e.target.closest("[data-rename-cat]");
+  if (renameSpan) {
+    const cat = catById(renameSpan.dataset.renameCat);
+    if (cat) startCategoryRename(renameSpan, cat);
+    return;
+  }
   const id = e.target.dataset.deleteCat;
   if (!id) return;
   const cat = catById(id);
