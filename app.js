@@ -68,9 +68,39 @@ document.addEventListener("click", (e) => {
 });
 
 document.getElementById("openTxModalCard").addEventListener("click", () => {
+  editingTxId = null;
+  document.getElementById("txModalTitle").textContent = "Nouvelle opération";
+  document.getElementById("txSubmitBtn").textContent = "Enregistrer l'opération";
+  txForm.reset();
+  document.getElementById("txDate").valueAsDate = new Date();
   renderCategorySelect();
   openModal("txModalOverlay");
 });
+
+function openTxEditModal(txId) {
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  editingTxId = txId;
+  document.getElementById("txModalTitle").textContent = "Modifier l'opération";
+  document.getElementById("txSubmitBtn").textContent = "Enregistrer les modifications";
+
+  document.getElementById("txDate").value = t.date;
+  document.getElementById("txAmount").value = Math.abs(t.amount);
+  const signValue = t.amount >= 0 ? "income" : "expense";
+  const signInput = document.querySelector(`input[name="txSign"][value="${signValue}"]`);
+  if (signInput) signInput.checked = true;
+
+  renderCategorySelect();
+  document.getElementById("txCategory").value = t.categoryId;
+  updateTxProjectVisibility();
+
+  if (t.projectId) document.getElementById("txProject").value = t.projectId;
+  if (t.savingsDeviceId) document.getElementById("txDevice").value = t.savingsDeviceId;
+  if (t.budgetId) document.getElementById("txBudget").value = t.budgetId;
+  document.getElementById("txNote").value = t.note || "";
+
+  openModal("txModalOverlay");
+}
 document.getElementById("openImportModalCard").addEventListener("click", () => openModal("importModalOverlay"));
 document.getElementById("openCatModalCard").addEventListener("click", () => openModal("catModalOverlay"));
 document.getElementById("openProjectModalCard").addEventListener("click", () => openModal("projectModalOverlay"));
@@ -797,6 +827,8 @@ function deviceLabel(deviceKey) {
   return d ? d.name : null;
 }
 
+let editingTxId = null;
+
 txForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const date = document.getElementById("txDate").value;
@@ -810,6 +842,56 @@ txForm.addEventListener("submit", (e) => {
   const projectId = categoryId === "epargne" ? (document.getElementById("txProject").value || null) : null;
   const savingsDeviceId = categoryId === "epargne" ? (document.getElementById("txDevice").value || null) : null;
   const budgetId = (sign === "expense" && categoryId !== "epargne") ? (document.getElementById("txBudget").value || null) : null;
+
+  if (editingTxId) {
+    const t = state.transactions.find(tx => tx.id === editingTxId);
+    if (!t) { editingTxId = null; return; }
+    // On retire d'abord les anciens effets (projet / dispositif d'épargne du mois d'origine)
+    // avant d'appliquer les nouveaux, pour ne jamais laisser de résidu.
+    if (t.projectId) {
+      const proj = state.projects.find(p => p.id === t.projectId);
+      if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
+    }
+    if (t.savingsDeviceId) {
+      adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount));
+    }
+
+    t.date = date;
+    t.amount = amount;
+    t.categoryId = categoryId;
+    t.note = note;
+    t.projectId = projectId;
+    t.savingsDeviceId = savingsDeviceId;
+    t.budgetId = budgetId;
+
+    if (projectId) {
+      const proj = state.projects.find(p => p.id === projectId);
+      if (proj) proj.saved = (proj.saved || 0) + Math.abs(amount);
+    }
+    if (savingsDeviceId) {
+      adjustSavingsDevice(monthDateKey(date), savingsDeviceId, Math.abs(amount));
+    }
+    editingTxId = null;
+    saveState();
+
+    const feedback = document.getElementById("txFeedback");
+    feedback.textContent = "Modifications enregistrées ✓";
+    setTimeout(() => {
+      feedback.textContent = "";
+      closeModal("txModalOverlay");
+    }, 900);
+
+    txForm.reset();
+    document.getElementById("txDate").valueAsDate = new Date();
+    renderCategorySelect();
+    document.getElementById("txModalTitle").textContent = "Nouvelle opération";
+    document.getElementById("txSubmitBtn").textContent = "Enregistrer l'opération";
+
+    renderDashboard();
+    renderHistory();
+    renderSavings();
+    return;
+  }
 
   state.transactions.push({ id: uid(), date, amount, categoryId, note, projectId, savingsDeviceId, budgetId });
   if (projectId) {
@@ -1066,7 +1148,7 @@ function renderHistory() {
       <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
       <td>${projBadge}${devBadge}${budgBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
       <td class="num"><span class="amount-cell"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"><span class="amount-suffix">€</span></span></td>
-      <td><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
+      <td><button class="icon-btn" data-edit-tx="${t.id}" aria-label="Modifier l'opération"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
   });
 }
@@ -1123,7 +1205,12 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
 });
 
 document.getElementById("historyBody").addEventListener("click", (e) => {
-  const id = e.target.dataset.deleteTx;
+  const editId = e.target.closest("[data-edit-tx]")?.dataset.editTx;
+  if (editId) {
+    openTxEditModal(editId);
+    return;
+  }
+  const id = e.target.closest("[data-delete-tx]")?.dataset.deleteTx;
   if (!id) return;
   if (!confirm("Supprimer cette opération ?")) return;
   const t = state.transactions.find(tx => tx.id === id);
@@ -1258,9 +1345,11 @@ function budgetLabel(budgetId) {
 }
 
 function computeBudgetSpent(budgetId) {
+  // Somme nette : une dépense compte pour son montant, un remboursement lié au
+  // même budget vient réduire le coût réel plutôt que s'y ajouter.
   return state.transactions
     .filter(t => t.budgetId === budgetId)
-    .reduce((s, t) => s + Math.abs(t.amount), 0);
+    .reduce((s, t) => s - t.amount, 0);
 }
 
 function renderBudgets() {
@@ -1294,6 +1383,9 @@ function renderBudgets() {
 
     const card = document.createElement("div");
     card.className = "project-card";
+    card.dataset.budgetId = b.id;
+    card.style.cursor = "pointer";
+    card.title = "Cliquer pour relier des opérations à ce budget";
     card.innerHTML = `
       <div class="project-top">
         <div>
@@ -1342,15 +1434,101 @@ document.getElementById("budgetList").addEventListener("click", (e) => {
     return;
   }
   const delId = e.target.closest("[data-delete-budget]")?.dataset.deleteBudget;
-  if (!delId) return;
-  const used = state.transactions.some(t => t.budgetId === delId);
-  if (used && !confirm("Ce budget contient des opérations liées. Elles resteront enregistrées mais ne seront plus rattachées à un budget. Continuer ?")) return;
-  state.budgets = state.budgets.filter(b => b.id !== delId);
-  state.transactions.forEach(t => { if (t.budgetId === delId) t.budgetId = null; });
+  if (delId) {
+    const used = state.transactions.some(t => t.budgetId === delId);
+    if (used && !confirm("Ce budget contient des opérations liées. Elles resteront enregistrées mais ne seront plus rattachées à un budget. Continuer ?")) return;
+    state.budgets = state.budgets.filter(b => b.id !== delId);
+    state.transactions.forEach(t => { if (t.budgetId === delId) t.budgetId = null; });
+    saveState();
+    renderBudgets();
+    renderHistory();
+    renderTxBudgetOptions();
+    return;
+  }
+  const card = e.target.closest("[data-budget-id]");
+  if (card) openBudgetLinkModal(card.dataset.budgetId);
+});
+
+/* ---------------- Relier des opérations existantes à un budget ---------------- */
+let budgetLinkTargetId = null;
+
+function renderBudgetLinkCategoryOptions() {
+  const filter = document.getElementById("budgetLinkCategoryFilter");
+  const prev = filter.value;
+  filter.innerHTML = `<option value="all">Toutes les catégories</option>`;
+  sortedCategories().forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat.id;
+    opt.textContent = catLabel(cat);
+    filter.appendChild(opt);
+  });
+  if (prev) filter.value = prev;
+}
+
+function renderBudgetLinkList() {
+  if (!budgetLinkTargetId) return;
+  const budget = state.budgets.find(b => b.id === budgetLinkTargetId);
+  if (!budget) return;
+  document.getElementById("budgetLinkModalTitle").textContent = `Relier des opérations à « ${budget.name} »`;
+
+  const searchValue = document.getElementById("budgetLinkSearch").value.trim().toLowerCase();
+  const catFilter = document.getElementById("budgetLinkCategoryFilter").value;
+
+  const txs = [...state.transactions]
+    .filter(t => catFilter === "all" || t.categoryId === catFilter)
+    .filter(t => {
+      if (!searchValue) return true;
+      const cat = catById(t.categoryId);
+      const haystack = `${t.note || ""} ${cat ? catLabel(cat) : ""}`.toLowerCase();
+      return haystack.includes(searchValue);
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 300); // on limite l'affichage pour rester réactif ; affine la recherche si besoin
+
+  const list = document.getElementById("budgetLinkList");
+  if (txs.length === 0) {
+    list.innerHTML = `<p class="empty-state">Aucune opération ne correspond à ta recherche.</p>`;
+    return;
+  }
+  list.innerHTML = txs.map(t => {
+    const cat = catById(t.categoryId);
+    const [y, m, d] = t.date.split("-");
+    const linkedElsewhere = t.budgetId && t.budgetId !== budgetLinkTargetId ? budgetLabel(t.budgetId) : null;
+    return `
+      <label class="mini-item" style="cursor:pointer;">
+        <span>
+          <input type="checkbox" data-link-tx="${t.id}" ${t.budgetId === budgetLinkTargetId ? "checked" : ""} style="margin-right:8px; vertical-align:middle;">
+          <span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>
+          ${d}/${m}/${y} — ${escapeAttr(t.note || "Sans note")}
+          ${linkedElsewhere ? `<span class="hint" style="margin-left:6px;">(actuellement : ${escapeAttr(linkedElsewhere)})</span>` : ""}
+        </span>
+        <span class="amt">${moneySigned(t.amount)}</span>
+      </label>`;
+  }).join("");
+}
+
+function openBudgetLinkModal(budgetId) {
+  budgetLinkTargetId = budgetId;
+  document.getElementById("budgetLinkSearch").value = "";
+  renderBudgetLinkCategoryOptions();
+  document.getElementById("budgetLinkCategoryFilter").value = "all";
+  renderBudgetLinkList();
+  openModal("budgetLinkModalOverlay");
+}
+
+document.getElementById("budgetLinkSearch").addEventListener("input", renderBudgetLinkList);
+document.getElementById("budgetLinkCategoryFilter").addEventListener("change", renderBudgetLinkList);
+
+document.getElementById("budgetLinkList").addEventListener("change", (e) => {
+  const txId = e.target.dataset.linkTx;
+  if (!txId) return;
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  t.budgetId = e.target.checked ? budgetLinkTargetId : null;
   saveState();
+  renderBudgetLinkList();
   renderBudgets();
   renderHistory();
-  renderTxBudgetOptions();
 });
 
 document.getElementById("budgetForm").addEventListener("submit", (e) => {
