@@ -1147,7 +1147,8 @@ function renderHistory() {
     tr.innerHTML = `
       <td><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></td>
       <td><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></td>
-      <td>${projBadge}${devBadge}${budgBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
+      <td>${projBadge}${devBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></td>
+      <td>${budgBadge || ""}</td>
       <td class="num"><span class="amount-cell"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"><span class="amount-suffix">€</span></span></td>
       <td><button class="icon-btn" data-edit-tx="${t.id}" aria-label="Modifier l'opération"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></td>`;
     body.appendChild(tr);
@@ -1498,7 +1499,7 @@ function renderBudgetLinkList() {
     return `
       <label class="mini-item" style="cursor:pointer;">
         <span>
-          <input type="checkbox" data-link-tx="${t.id}" ${t.budgetId === budgetLinkTargetId ? "checked" : ""} style="margin-right:8px; vertical-align:middle;">
+          <input type="checkbox" class="budget-link-check" data-link-tx="${t.id}" ${t.budgetId === budgetLinkTargetId ? "checked" : ""}>
           <span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>
           ${d}/${m}/${y} — ${escapeAttr(t.note || "Sans note")}
           ${linkedElsewhere ? `<span class="hint" style="margin-left:6px;">(actuellement : ${escapeAttr(linkedElsewhere)})</span>` : ""}

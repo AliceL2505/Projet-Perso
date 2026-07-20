@@ -948,6 +948,25 @@ body.hide-amounts input[data-saved-for]:focus {
   border-radius: var(--radius-sm);
   font-size: 13.5px;
 }
+.budget-link-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  margin-right: 8px;
+  vertical-align: middle;
+  transition: background .15s ease, border-color .15s ease;
+}
+.budget-link-check:hover { border-color: var(--wine); }
+.budget-link-check:checked {
+  background: var(--wine);
+  border-color: var(--wine);
+}
 .mini-item .cat-tag {
   font-size: 11px;
   color: var(--wine-dim);
