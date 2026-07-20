@@ -979,8 +979,7 @@ function renderCategoryList() {
       const row = document.createElement("div");
       row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
       row.innerHTML = `
-        <span class="cemoji" data-emoji-cat="${cat.id}" title="Cliquer pour changer l'émoji">${catEmoji(cat)}</span>
-        <span class="cname" data-rename-cat="${cat.id}" title="Cliquer pour renommer">${escapeAttr(cat.name)}</span>
+        <span class="cname" data-rename-cat="${cat.id}" title="Cliquer pour renommer">${catLabel(cat)}</span>
         ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
         <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
       `;
@@ -1000,16 +999,26 @@ function handleCategoryListChange(e) {
   renderDashboard();
 }
 
-// Renommage inline : clic sur le nom → champ texte à la place, sans rien changer
-// d'autre visuellement. Le nom est stocké une seule fois sur la catégorie (state.categories),
-// donc le renommer met automatiquement à jour tous les endroits où elle apparaît
-// (jauges, opérations, historique, projets, suivi épargne...).
+// Détecte un émoji (éventuellement composé, avec variation selector) en tête de chaîne.
+function splitEmojiAndName(str) {
+  const trimmed = str.trim();
+  const match = trimmed.match(/^(\p{Extended_Pictographic}(?:️)?(?:‍\p{Extended_Pictographic}(?:️)?)*)\s*(.*)$/u);
+  if (match && match[1]) {
+    return { emoji: match[1], name: match[2].trim() };
+  }
+  return { emoji: null, name: trimmed };
+}
+
+// Renommage inline : clic sur la case → champ texte à la place, contenant l'émoji ET le nom
+// (l'émoji se modifie comme n'importe quel caractère du texte). Le nom/émoji sont stockés
+// une seule fois sur la catégorie (state.categories), donc les modifier met automatiquement
+// à jour tous les endroits où la catégorie apparaît (jauges, opérations, historique...).
 function startCategoryRename(span, cat) {
   if (span.querySelector("input")) return; // déjà en cours d'édition
   const input = document.createElement("input");
   input.type = "text";
   input.className = "cname-edit-input";
-  input.value = cat.name;
+  input.value = catLabel(cat);
   span.replaceWith(input);
   input.focus();
   input.select();
@@ -1018,46 +1027,11 @@ function startCategoryRename(span, cat) {
   const commit = () => {
     if (done) return;
     done = true;
-    const newName = input.value.trim();
-    if (newName && newName !== cat.name) {
-      cat.name = newName;
-      saveState();
-    }
-    renderCategoryList();
-    renderCategorySelect();
-    renderDashboard();
-    renderHistory();
-  };
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); input.blur(); }
-    else if (e.key === "Escape") { input.value = cat.name; input.blur(); }
-  });
-  input.addEventListener("blur", commit);
-}
-
-// Changement d'émoji : clic sur l'émoji → petit champ texte à la place, dans lequel on peut
-// coller/taper n'importe quel émoji (ex : sélecteur système du Mac via la touche fn/globe).
-// L'émoji choisi est stocké sur la catégorie et prend le pas sur l'émoji par défaut.
-function startCategoryEmojiEdit(span, cat) {
-  if (span.querySelector("input")) return; // déjà en cours d'édition
-  const input = document.createElement("input");
-  input.type = "text";
-  input.className = "cemoji-edit-input";
-  input.value = catEmoji(cat);
-  span.replaceWith(input);
-  input.focus();
-  input.select();
-
-  let done = false;
-  const commit = () => {
-    if (done) return;
-    done = true;
-    const newEmoji = input.value.trim();
-    if (newEmoji) {
-      cat.emoji = newEmoji;
-      saveState();
-    }
+    const { emoji, name } = splitEmojiAndName(input.value);
+    let changed = false;
+    if (name && name !== cat.name) { cat.name = name; changed = true; }
+    if (emoji && emoji !== catEmoji(cat)) { cat.emoji = emoji; changed = true; }
+    if (changed) saveState();
     renderCategoryList();
     renderCategorySelect();
     renderDashboard();
@@ -1072,12 +1046,6 @@ function startCategoryEmojiEdit(span, cat) {
 }
 
 function handleCategoryListClick(e) {
-  const emojiSpan = e.target.closest("[data-emoji-cat]");
-  if (emojiSpan) {
-    const cat = catById(emojiSpan.dataset.emojiCat);
-    if (cat) startCategoryEmojiEdit(emojiSpan, cat);
-    return;
-  }
   const renameSpan = e.target.closest("[data-rename-cat]");
   if (renameSpan) {
     const cat = catById(renameSpan.dataset.renameCat);
