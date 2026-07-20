@@ -1346,6 +1346,67 @@ function computeBudgetSpent(budgetId) {
     .reduce((s, t) => s - t.amount, 0);
 }
 
+// Ordre personnalisé des budgets (glisser-déposer), comme pour les catégories.
+// Les budgets sans ordre défini gardent l'ancien tri (date puis nom), à la suite
+// de ceux déjà réordonnés. Les budgets archivés sont mis de côté, repliés par défaut.
+function budgetsSortedForDisplay() {
+  const active = state.budgets.filter(b => !b.archived);
+  const archived = state.budgets.filter(b => b.archived);
+  const ordered = active.filter(b => typeof b.order === "number").sort((a, b) => a.order - b.order);
+  const rest = active.filter(b => typeof b.order !== "number").sort((a, b) => {
+    if (a.date && b.date) return a.date.localeCompare(b.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return a.name.localeCompare(b.name, "fr");
+  });
+  const archivedSorted = [...archived].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  return { active: [...ordered, ...rest], archived: archivedSorted };
+}
+
+let budgetsShowArchived = false;
+
+function buildBudgetCard(b, archived) {
+  const spent = computeBudgetSpent(b.id);
+  const hasTarget = b.target > 0;
+  const realPct = hasTarget ? Math.round((spent / b.target) * 100) : 0;
+  const pct = hasTarget ? Math.min(100, realPct) : 0;
+  const cls = realPct > 100 ? "over" : "ok";
+
+  let dateHtml = "";
+  if (b.date) {
+    const [y, m, d] = b.date.split("-");
+    dateHtml = `<p class="project-deadline">📅 ${d}/${m}/${y}</p>`;
+  }
+
+  const card = document.createElement("div");
+  card.className = "project-card" + (archived ? " project-card-archived" : "");
+  card.dataset.budgetId = b.id;
+  card.style.cursor = "pointer";
+  card.title = "Cliquer pour relier des opérations à ce budget";
+  if (!archived) card.draggable = true;
+  card.innerHTML = `
+    <div class="project-top">
+      <div>
+        <div class="project-name">${escapeAttr(b.name)}</div>
+        ${b.note ? `<p class="project-note">${escapeAttr(b.note)}</p>` : ""}
+      </div>
+      <div class="project-actions">
+        <button class="icon-btn" data-link-budget="${b.id}" aria-label="Relier des opérations à ${escapeAttr(b.name)}" title="Relier des opérations"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/></svg></button>
+        <button class="icon-btn" data-edit-budget="${b.id}" aria-label="Modifier ${escapeAttr(b.name)}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button class="icon-btn" data-archive-budget="${b.id}" aria-label="${archived ? "Désarchiver" : "Archiver"} ${escapeAttr(b.name)}" title="${archived ? "Désarchiver" : "Archiver"}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg></button>
+        <button class="icon-btn" data-delete-budget="${b.id}" aria-label="Supprimer ${escapeAttr(b.name)}">✕</button>
+      </div>
+    </div>
+    ${hasTarget ? `
+    <div class="gauge-track">
+      <div class="gauge-fill ${cls}" style="width:${pct}%"></div>
+    </div>
+    <div class="project-figures">${money(spent)} / ${money(b.target)} (${realPct}%)</div>` : `
+    <div class="project-figures">${money(spent)} dépensés jusqu'ici</div>`}
+    ${dateHtml}`;
+  return card;
+}
+
 function renderBudgets() {
   const list = document.getElementById("budgetList");
   list.innerHTML = "";
@@ -1355,51 +1416,37 @@ function renderBudgets() {
     return;
   }
 
-  const sorted = [...state.budgets].sort((a, b) => {
-    if (a.date && b.date) return a.date.localeCompare(b.date);
-    if (a.date) return -1;
-    if (b.date) return 1;
-    return a.name.localeCompare(b.name, "fr");
-  });
+  const { active, archived } = budgetsSortedForDisplay();
 
-  sorted.forEach(b => {
-    const spent = computeBudgetSpent(b.id);
-    const hasTarget = b.target > 0;
-    const realPct = hasTarget ? Math.round((spent / b.target) * 100) : 0;
-    const pct = hasTarget ? Math.min(100, realPct) : 0;
-    const cls = realPct > 100 ? "over" : "ok";
+  if (active.length === 0 && archived.length === 0) {
+    list.innerHTML = `<p class="empty-state">Aucun budget pour l'instant. Crée-en un ci-dessous, par exemple « Mariage HM » ou « Vacances Croatie ».</p>`;
+    return;
+  }
+  if (active.length === 0) {
+    list.innerHTML = `<p class="empty-state">Tous tes budgets sont archivés.</p>`;
+  }
 
-    let dateHtml = "";
-    if (b.date) {
-      const [y, m, d] = b.date.split("-");
-      dateHtml = `<p class="project-deadline">📅 ${d}/${m}/${y}</p>`;
+  active.forEach(b => list.appendChild(buildBudgetCard(b, false)));
+
+  if (archived.length > 0) {
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "pill-btn pill-btn-ghost";
+    toggle.style.gridColumn = "1 / -1";
+    toggle.style.marginTop = "4px";
+    toggle.textContent = budgetsShowArchived
+      ? `Masquer les budgets archivés (${archived.length})`
+      : `Voir les budgets archivés (${archived.length})`;
+    toggle.addEventListener("click", () => {
+      budgetsShowArchived = !budgetsShowArchived;
+      renderBudgets();
+    });
+    list.appendChild(toggle);
+
+    if (budgetsShowArchived) {
+      archived.forEach(b => list.appendChild(buildBudgetCard(b, true)));
     }
-
-    const card = document.createElement("div");
-    card.className = "project-card";
-    card.dataset.budgetId = b.id;
-    card.style.cursor = "pointer";
-    card.title = "Cliquer pour relier des opérations à ce budget";
-    card.innerHTML = `
-      <div class="project-top">
-        <div>
-          <div class="project-name">${escapeAttr(b.name)}</div>
-          ${b.note ? `<p class="project-note">${escapeAttr(b.note)}</p>` : ""}
-        </div>
-        <div class="project-actions">
-          <button class="icon-btn" data-edit-budget="${b.id}" aria-label="Modifier ${escapeAttr(b.name)}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
-          <button class="icon-btn" data-delete-budget="${b.id}" aria-label="Supprimer ${escapeAttr(b.name)}">✕</button>
-        </div>
-      </div>
-      ${hasTarget ? `
-      <div class="gauge-track">
-        <div class="gauge-fill ${cls}" style="width:${pct}%"></div>
-      </div>
-      <div class="project-figures">${money(spent)} / ${money(b.target)} (${realPct}%)</div>` : `
-      <div class="project-figures">${money(spent)} dépensés jusqu'ici</div>`}
-      ${dateHtml}`;
-    list.appendChild(card);
-  });
+  }
 }
 
 document.getElementById("openBudgetModalCard").addEventListener("click", () => {
@@ -1413,6 +1460,11 @@ document.getElementById("openBudgetModalCard").addEventListener("click", () => {
 let editingBudgetId = null;
 
 document.getElementById("budgetList").addEventListener("click", (e) => {
+  const linkId = e.target.closest("[data-link-budget]")?.dataset.linkBudget;
+  if (linkId) {
+    openBudgetLinkModal(linkId);
+    return;
+  }
   const editId = e.target.closest("[data-edit-budget]")?.dataset.editBudget;
   if (editId) {
     const b = state.budgets.find(x => x.id === editId);
@@ -1427,6 +1479,16 @@ document.getElementById("budgetList").addEventListener("click", (e) => {
     openModal("budgetModalOverlay");
     return;
   }
+  const archiveId = e.target.closest("[data-archive-budget]")?.dataset.archiveBudget;
+  if (archiveId) {
+    const b = state.budgets.find(x => x.id === archiveId);
+    if (b) {
+      b.archived = !b.archived;
+      saveState();
+      renderBudgets();
+    }
+    return;
+  }
   const delId = e.target.closest("[data-delete-budget]")?.dataset.deleteBudget;
   if (delId) {
     const used = state.transactions.some(t => t.budgetId === delId);
@@ -1439,8 +1501,55 @@ document.getElementById("budgetList").addEventListener("click", (e) => {
     renderTxBudgetOptions();
     return;
   }
+  if (budgetsDragJustHappened) { budgetsDragJustHappened = false; return; }
   const card = e.target.closest("[data-budget-id]");
   if (card) openBudgetLinkModal(card.dataset.budgetId);
+});
+
+/* ---------------- Réordonnancement des budgets par glisser-déposer ---------------- */
+let budgetsDragJustHappened = false;
+let budgetsDraggedId = null;
+const budgetListEl = document.getElementById("budgetList");
+
+budgetListEl.addEventListener("dragstart", (e) => {
+  const card = e.target.closest(".project-card");
+  if (!card || card.classList.contains("project-card-archived")) return;
+  budgetsDraggedId = card.dataset.budgetId;
+  card.classList.add("gauge-row-dragging");
+  e.dataTransfer.effectAllowed = "move";
+  try { e.dataTransfer.setData("text/plain", budgetsDraggedId); } catch (err) { /* ignore */ }
+});
+
+budgetListEl.addEventListener("dragover", (e) => {
+  if (!budgetsDraggedId) return;
+  e.preventDefault();
+  const overCard = e.target.closest(".project-card");
+  if (!overCard || overCard.classList.contains("project-card-archived") || overCard.dataset.budgetId === budgetsDraggedId) return;
+  const rect = overCard.getBoundingClientRect();
+  const before = (e.clientY - rect.top) < rect.height / 2;
+  const draggedEl = budgetListEl.querySelector(`.project-card[data-budget-id="${budgetsDraggedId}"]`);
+  if (!draggedEl) return;
+  if (before) overCard.parentNode.insertBefore(draggedEl, overCard);
+  else overCard.parentNode.insertBefore(draggedEl, overCard.nextSibling);
+});
+
+budgetListEl.addEventListener("drop", (e) => {
+  e.preventDefault();
+});
+
+budgetListEl.addEventListener("dragend", (e) => {
+  const card = e.target.closest(".project-card");
+  if (card) card.classList.remove("gauge-row-dragging");
+  if (!budgetsDraggedId) return;
+  budgetsDragJustHappened = true;
+  // Persiste le nouvel ordre visuel des budgets actifs.
+  const order = [...budgetListEl.querySelectorAll(".project-card:not(.project-card-archived)")].map(c => c.dataset.budgetId);
+  order.forEach((budgetId, index) => {
+    const b = state.budgets.find(x => x.id === budgetId);
+    if (b) b.order = index;
+  });
+  budgetsDraggedId = null;
+  saveState();
 });
 
 /* ---------------- Relier des opérations existantes à un budget ---------------- */
@@ -1490,13 +1599,13 @@ function renderBudgetLinkList() {
     const linkedElsewhere = t.budgetId && t.budgetId !== budgetLinkTargetId ? budgetLabel(t.budgetId) : null;
     return `
       <label class="mini-item" style="cursor:pointer;">
-        <span>
-          <input type="checkbox" class="budget-link-check" data-link-tx="${t.id}" ${t.budgetId === budgetLinkTargetId ? "checked" : ""}>
+        <input type="checkbox" class="budget-link-check" data-link-tx="${t.id}" ${t.budgetId === budgetLinkTargetId ? "checked" : ""}>
+        <span class="amt">${moneySigned(t.amount)}</span>
+        <span class="budget-link-rest">
           <span class="cat-tag">${cat ? catLabel(cat) : "?"}</span>
           ${d}/${m}/${y} — ${escapeAttr(t.note || "Sans note")}
           ${linkedElsewhere ? `<span class="hint" style="margin-left:6px;">(actuellement : ${escapeAttr(linkedElsewhere)})</span>` : ""}
         </span>
-        <span class="amt">${moneySigned(t.amount)}</span>
       </label>`;
   }).join("");
 }

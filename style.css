@@ -977,6 +977,12 @@ body.hide-amounts input[data-saved-for]:focus {
 .mini-item .amt { font-weight: 600; }
 .mini-item .amt.income { color: var(--success); }
 
+/* Pop up "Relier des opérations à ..." : rond à cocher, montant, puis le reste */
+#budgetLinkList .mini-item { justify-content: flex-start; align-items: center; gap: 10px; }
+#budgetLinkList .budget-link-check { margin-right: 0; }
+#budgetLinkList .mini-item .amt { min-width: 76px; text-align: right; flex-shrink: 0; }
+#budgetLinkList .budget-link-rest { flex: 1 1 0; min-width: 0; }
+
 /* ---------- Formulaires ---------- */
 .form-card {
   background: var(--card);
@@ -1365,6 +1371,7 @@ input:focus, select:focus {
   font-size: 15px;
 }
 .ops-table .icon-btn:hover { color: var(--danger); }
+.ops-table .cat-tag { display: inline-flex; align-items: center; height: 24px; vertical-align: middle; }
 .history-table th.num { text-align: right; }
 .row-income td.num { color: var(--success); }
 .inline-cat-select {
@@ -1405,6 +1412,8 @@ input:focus, select:focus {
   -webkit-appearance: none;
   -moz-appearance: none;
   box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
   height: 24px !important;
   line-height: 24px !important;
   padding: 0 8px !important;
@@ -1456,7 +1465,8 @@ input:focus, select:focus {
 .amount-suffix { color: var(--ink-soft); font-size: 13px; flex-shrink: 0; height: 24px; line-height: 24px; }
 .inline-note-input::placeholder { color: var(--ink-soft); opacity: 0.7; }
 .inline-date-input:hover, .inline-note-input:hover, .amount-cell:hover { background: var(--neutral-hover); }
-.inline-date-input:focus, .inline-note-input:focus, .amount-cell:focus-within { outline: 2px solid var(--wine); background: #fff; }
+.inline-date-input:focus, .inline-note-input:focus { outline: 2px solid var(--wine); background: #fff; }
+.amount-cell:focus-within { outline: none; box-shadow: 0 0 0 2px var(--wine); background: #fff; }
 
 
 /* ---------- Pied de page ---------- */
@@ -1496,6 +1506,7 @@ input:focus, select:focus {
 .project-editrow { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .project-editrow label { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); font-weight: 400; }
 .project-editrow input { width: 90px; }
+.project-card-archived { opacity: 0.55; }
 
 /* ---------- Tableaux Excel (comparatif / résumé mensuel) ---------- */
 .table-scroll { overflow-x: auto; }
