@@ -1231,14 +1231,17 @@ input:focus, select:focus {
   background: none;
   border: none;
   border-bottom: 1px dashed var(--line);
-  padding: 0;
+  padding: 0 0 0 3px;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
-.category-item .cname-edit-input:focus {
-  outline: none;
+.category-item .cname-edit-input:focus,
+.category-item .cname-edit-input:focus-visible {
+  outline: none !important;
   border-bottom: 1px solid var(--wine);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--wine) !important;
 }
 .category-item .ctype {
   flex-shrink: 0;
