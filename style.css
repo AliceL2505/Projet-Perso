@@ -978,7 +978,7 @@ body.hide-amounts input[data-saved-for]:focus {
 .mini-item .amt.income { color: var(--success); }
 
 /* Pop up "Relier des opérations à ..." : rond à cocher, montant, puis le reste */
-#budgetLinkList .mini-item { justify-content: flex-start; align-items: center; gap: 10px; }
+#budgetLinkList .mini-item { flex-direction: row; justify-content: flex-start; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink); font-weight: 400; }
 #budgetLinkList .budget-link-check { margin-right: 0; }
 #budgetLinkList .mini-item .amt { min-width: 76px; text-align: right; flex-shrink: 0; }
 #budgetLinkList .budget-link-rest { flex: 1 1 0; min-width: 0; }
