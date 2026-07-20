@@ -1374,7 +1374,7 @@ function budgetsSortedForDisplay() {
   return { active: [...ordered, ...rest], archived: archivedSorted };
 }
 
-let budgetsShowArchived = false;
+const BUDGET_MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 function buildBudgetCard(b, archived) {
   const spent = computeBudgetSpent(b.id);
@@ -1383,11 +1383,16 @@ function buildBudgetCard(b, archived) {
   const pct = hasTarget ? Math.min(100, realPct) : 0;
   const cls = realPct > 100 ? "over" : "ok";
 
-  let dateHtml = "";
+  let monthLabel = "";
   if (b.date) {
-    const [y, m, d] = b.date.split("-");
-    dateHtml = `<p class="project-deadline">📅 ${d}/${m}/${y}</p>`;
+    const [y, m] = b.date.split("-");
+    const monthName = BUDGET_MONTH_NAMES[parseInt(m, 10) - 1];
+    if (monthName) monthLabel = `${monthName} ${y}`;
   }
+
+  const figuresText = hasTarget
+    ? `${money(spent)} / ${money(b.target)} (${realPct}%)`
+    : `${money(spent)} dépensés jusqu'ici`;
 
   const card = document.createElement("div");
   card.className = "project-card" + (archived ? " project-card-archived" : "");
@@ -1411,10 +1416,11 @@ function buildBudgetCard(b, archived) {
     ${hasTarget ? `
     <div class="gauge-track">
       <div class="gauge-fill ${cls}" style="width:${pct}%"></div>
-    </div>
-    <div class="project-figures">${money(spent)} / ${money(b.target)} (${realPct}%)</div>` : `
-    <div class="project-figures">${money(spent)} dépensés jusqu'ici</div>`}
-    ${dateHtml}`;
+    </div>` : ""}
+    <div class="project-figures-row">
+      <span class="project-figures">${figuresText}</span>
+      ${monthLabel ? `<span class="budget-month">${monthLabel}</span>` : ""}
+    </div>`;
   return card;
 }
 
@@ -1440,23 +1446,12 @@ function renderBudgets() {
   active.forEach(b => list.appendChild(buildBudgetCard(b, false)));
 
   if (archived.length > 0) {
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "pill-btn pill-btn-ghost";
-    toggle.style.gridColumn = "1 / -1";
-    toggle.style.marginTop = "4px";
-    toggle.textContent = budgetsShowArchived
-      ? `Masquer les budgets archivés (${archived.length})`
-      : `Voir les budgets archivés (${archived.length})`;
-    toggle.addEventListener("click", () => {
-      budgetsShowArchived = !budgetsShowArchived;
-      renderBudgets();
-    });
-    list.appendChild(toggle);
+    const heading = document.createElement("h2");
+    heading.className = "section-title budget-archived-title";
+    heading.textContent = "Budgets archivés";
+    list.appendChild(heading);
 
-    if (budgetsShowArchived) {
-      archived.forEach(b => list.appendChild(buildBudgetCard(b, true)));
-    }
+    archived.forEach(b => list.appendChild(buildBudgetCard(b, true)));
   }
 }
 
@@ -1485,7 +1480,7 @@ document.getElementById("budgetList").addEventListener("click", (e) => {
     document.getElementById("budgetFormSubmitBtn").textContent = "Enregistrer les modifications";
     document.getElementById("budgetName").value = b.name;
     document.getElementById("budgetTarget").value = b.target || "";
-    document.getElementById("budgetDate").value = b.date || "";
+    document.getElementById("budgetDate").value = b.date ? b.date.slice(0, 7) : "";
     document.getElementById("budgetNote").value = b.note || "";
     openModal("budgetModalOverlay");
     return;

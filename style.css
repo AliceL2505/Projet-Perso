@@ -1516,7 +1516,12 @@ input:focus, select:focus {
 .project-editrow { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .project-editrow label { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); font-weight: 400; }
 .project-editrow input { width: 90px; }
-.project-card-archived { opacity: 0.55; }
+.project-card-archived { background: var(--paper); }
+.budget-archived-title { grid-column: 1 / -1; }
+.project-list .empty-state { grid-column: 1 / -1; }
+.project-figures-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.project-figures-row .project-figures { margin: 0; }
+.budget-month { font-size: 12px; color: var(--ink-soft); flex-shrink: 0; white-space: nowrap; }
 
 /* ---------- Tableaux Excel (comparatif / résumé mensuel) ---------- */
 .table-scroll { overflow-x: auto; }
