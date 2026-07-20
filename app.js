@@ -102,6 +102,7 @@ function openTxEditModal(txId) {
   openModal("txModalOverlay");
 }
 document.getElementById("openImportModalCard").addEventListener("click", () => openModal("importModalOverlay"));
+document.getElementById("openCategoriesModalCard").addEventListener("click", () => openModal("categoriesModalOverlay"));
 document.getElementById("openCatModalCard").addEventListener("click", () => openModal("catModalOverlay"));
 document.getElementById("openProjectModalCard").addEventListener("click", () => openModal("projectModalOverlay"));
 
@@ -388,7 +389,6 @@ const MONTH_SCOPED_TABS = ["dashboard", "add"];
 
 const TAB_TITLES = {
   add: "Opérations",
-  categories: "Vos catégories",
   projects: "Mes projets",
   monthly: "Résumé mensuel",
   yearly: "Comparatif annuel",
@@ -549,15 +549,7 @@ function renderDashboard() {
   const activeProfileName = (getProfiles().find(p => p.id === activeProfileId) || {}).name || USER_NAME;
   document.getElementById("greetingName").textContent = `Bonjour ${activeProfileName} !`;
   const greeting = document.getElementById("greetingText");
-  let msg;
-  if (totalBudget > 0) {
-    msg = remainingBudget >= 0
-      ? `Continue comme ça !<br>Il te reste ${money(remainingBudget)} avant ton budget prévu.`
-      : `Tu as dépassé ton budget prévu<br>de ${money(-remainingBudget)} ce mois-ci.`;
-  } else {
-    msg = `Continue comme ça !`;
-  }
-  greeting.innerHTML = msg;
+  greeting.innerHTML = `Petit à petit, les grands projets prennent vie.`;
 
   renderRecurringExpenses(income - expense);
 
