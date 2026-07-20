@@ -775,9 +775,10 @@ function renderTxBudgetOptions() {
 function updateTxBudgetVisibility() {
   const row = document.getElementById("txBudgetRow");
   if (!row) return;
-  const sign = document.querySelector('input[name="txSign"]:checked')?.value || "expense";
+  // Disponible sur les dépenses ET les revenus (hors épargne, qui a son propre lien
+  // projet/dispositif) : un remboursement reçu pour un budget vient réduire son coût net.
   const catId = document.getElementById("txCategory").value;
-  if (sign === "expense" && catId !== "epargne") {
+  if (catId !== "epargne") {
     renderTxBudgetOptions();
     row.style.display = "";
   } else {
@@ -841,7 +842,7 @@ txForm.addEventListener("submit", (e) => {
   const amount = sign === "expense" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
   const projectId = categoryId === "epargne" ? (document.getElementById("txProject").value || null) : null;
   const savingsDeviceId = categoryId === "epargne" ? (document.getElementById("txDevice").value || null) : null;
-  const budgetId = (sign === "expense" && categoryId !== "epargne") ? (document.getElementById("txBudget").value || null) : null;
+  const budgetId = categoryId !== "epargne" ? (document.getElementById("txBudget").value || null) : null;
 
   if (editingTxId) {
     const t = state.transactions.find(tx => tx.id === editingTxId);
