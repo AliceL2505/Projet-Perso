@@ -358,11 +358,12 @@ const CATEGORY_EMOJI = {
   louise_telephone: "📱", louise_assurances: "🛡️", louise_abonnements: "📺",
   louise_divers: "🔸", louise_epargne: "🌱",
 };
-function catEmoji(id) {
-  return CATEGORY_EMOJI[id] || "🔸";
+function catEmoji(cat) {
+  if (cat && cat.emoji) return cat.emoji;
+  return CATEGORY_EMOJI[cat && cat.id] || "🔸";
 }
 function catLabel(cat) {
-  return `${catEmoji(cat.id)} ${cat.name}`;
+  return `${catEmoji(cat)} ${cat.name}`;
 }
 
 const PIE_COLORS = ["#B98593", "#9B8AA6", "#C9A66B", "#D97A6C", "#7C9BAE", "#E0A899", "#B9A38C", "#9FA8C9", "#CBB994", "#8B9DC3", "#C7A6C9", "#A98B7A"];
@@ -978,7 +979,8 @@ function renderCategoryList() {
       const row = document.createElement("div");
       row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
       row.innerHTML = `
-        <span class="cname" data-rename-cat="${cat.id}" title="Cliquer pour renommer">${catLabel(cat)}</span>
+        <span class="cemoji" data-emoji-cat="${cat.id}" title="Cliquer pour changer l'émoji">${catEmoji(cat)}</span>
+        <span class="cname" data-rename-cat="${cat.id}" title="Cliquer pour renommer">${escapeAttr(cat.name)}</span>
         ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
         <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
       `;
@@ -1034,7 +1036,48 @@ function startCategoryRename(span, cat) {
   input.addEventListener("blur", commit);
 }
 
+// Changement d'émoji : clic sur l'émoji → petit champ texte à la place, dans lequel on peut
+// coller/taper n'importe quel émoji (ex : sélecteur système du Mac via la touche fn/globe).
+// L'émoji choisi est stocké sur la catégorie et prend le pas sur l'émoji par défaut.
+function startCategoryEmojiEdit(span, cat) {
+  if (span.querySelector("input")) return; // déjà en cours d'édition
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "cemoji-edit-input";
+  input.value = catEmoji(cat);
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  const commit = () => {
+    if (done) return;
+    done = true;
+    const newEmoji = input.value.trim();
+    if (newEmoji) {
+      cat.emoji = newEmoji;
+      saveState();
+    }
+    renderCategoryList();
+    renderCategorySelect();
+    renderDashboard();
+    renderHistory();
+  };
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+    else if (e.key === "Escape") { done = true; renderCategoryList(); }
+  });
+  input.addEventListener("blur", commit);
+}
+
 function handleCategoryListClick(e) {
+  const emojiSpan = e.target.closest("[data-emoji-cat]");
+  if (emojiSpan) {
+    const cat = catById(emojiSpan.dataset.emojiCat);
+    if (cat) startCategoryEmojiEdit(emojiSpan, cat);
+    return;
+  }
   const renameSpan = e.target.closest("[data-rename-cat]");
   if (renameSpan) {
     const cat = catById(renameSpan.dataset.renameCat);
