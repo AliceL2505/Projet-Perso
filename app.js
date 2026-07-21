@@ -587,6 +587,7 @@ const LUCIE_SEED_TRANSACTIONS = [
   { date: "2026-07-04", amount: -38, categoryId: "restaurants", note: "SumUp *GIS PIZFR BONNIERES SU" },
   { date: "2026-07-04", amount: -28, categoryId: "voiture", note: "TOTAL" },
 ];
+const LUCIE_SEED_DATA_VERSION = "2026-07-21-releve-reel";
 
 const LOUISE_CATEGORIES = [{"id": "louise_salaire", "name": "Salaire", "type": "income", "budget": 0}, {"id": "louise_logement", "name": "Logement", "type": "expense", "budget": 850}, {"id": "louise_courses", "name": "Courses", "type": "expense", "budget": 270}, {"id": "louise_restaurant", "name": "Restaurant", "type": "expense", "budget": 120}, {"id": "louise_loisirs", "name": "Loisirs", "type": "expense", "budget": 90}, {"id": "louise_sport", "name": "Sport", "type": "expense", "budget": 0}, {"id": "louise_sante", "name": "Santé", "type": "expense", "budget": 40}, {"id": "louise_vetements", "name": "Vêtements", "type": "expense", "budget": 70}, {"id": "louise_beaute", "name": "Beauté", "type": "expense", "budget": 50}, {"id": "louise_transport", "name": "Transport", "type": "expense", "budget": 100}, {"id": "louise_vacances", "name": "Vacances", "type": "expense", "budget": 80}, {"id": "louise_cadeaux", "name": "Cadeaux", "type": "expense", "budget": 40}, {"id": "louise_telephone", "name": "Téléphone / Internet", "type": "expense", "budget": 40}, {"id": "louise_assurances", "name": "Assurances", "type": "expense", "budget": 60}, {"id": "louise_abonnements", "name": "Abonnements", "type": "expense", "budget": 35}, {"id": "louise_divers", "name": "Divers", "type": "expense", "budget": 55}, {"id": "louise_epargne", "name": "Épargne", "type": "expense", "budget": 380}];
 
@@ -598,7 +599,6 @@ currentMonth.setDate(1);
 
 /* Profil "Lucie" — historique réel importé depuis un relevé bancaire (janvier à
    juillet 2026), catégorisé automatiquement quand c'était sans ambiguïté. */
-const LUCIE_SEED_DATA_VERSION = "2026-07-21-releve-reel";
 
 
 
