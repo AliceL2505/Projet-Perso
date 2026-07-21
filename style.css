@@ -1169,6 +1169,7 @@ input:focus, select:focus {
 }
 .add-page-layout .form-card { flex: 1 1 420px; margin-top: 0; }
 .import-card-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#recurringCard .import-card-header { justify-content: space-between; }
 .badge-soon {
   font-size: 11px;
   font-weight: 600;
@@ -1326,7 +1327,7 @@ input:focus, select:focus {
   white-space: nowrap;
   cursor: pointer;
 }
-.history-all-months-toggle input[type=checkbox] { width: auto; accent-color: var(--wine); cursor: pointer; }
+.history-all-months-toggle .budget-link-check { margin-right: 0; }
 .search-pill {
   all: unset;
   display: flex;

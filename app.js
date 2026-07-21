@@ -206,6 +206,7 @@ function loadState(profileId) {
       const parsed = JSON.parse(raw);
       if (!parsed.projects) parsed.projects = [];
       if (!parsed.budgets) parsed.budgets = [];
+      if (!parsed.manualRecurring) parsed.manualRecurring = [];
       if (!parsed.savings) parsed.savings = SEED_SAVINGS.map(s => ({ ...s, id: uid() }));
       if (!parsed.savingsDevices) parsed.savingsDevices = [];
       if (!parsed.credits) parsed.credits = [];
@@ -232,6 +233,7 @@ function loadState(profileId) {
       transactions: seeded,
       projects: [],
       budgets: [],
+      manualRecurring: [],
       savings: SEED_SAVINGS.map(s => ({ ...s, id: uid() })),
       savingsDevices: [],
       credits: [],
@@ -248,6 +250,7 @@ function loadState(profileId) {
       transactions: seeded,
       projects: [],
       budgets: [],
+      manualRecurring: [],
       savings: [],
       savingsDevices: [],
       credits: [],
@@ -262,6 +265,7 @@ function loadState(profileId) {
     transactions: seeded,
     projects: [],
     budgets: [],
+    manualRecurring: [],
     savings: [],
     savingsDevices: [],
     credits: [],
@@ -494,14 +498,17 @@ function detectRecurringExpenses() {
 }
 
 function renderRecurringExpenses(currentRemaining) {
-  const card = document.getElementById("recurringCard");
-  const upcoming = detectRecurringExpenses();
+  const auto = detectRecurringExpenses();
+  const manual = (state.manualRecurring || []).map(m => ({
+    id: m.id, catId: m.catId, cat: catById(m.catId), note: m.note, amount: Math.abs(m.amount), manual: true,
+  }));
+  const upcoming = [...manual, ...auto].sort((a, b) => b.amount - a.amount);
 
   if (upcoming.length === 0) {
-    card.style.display = "none";
+    document.getElementById("recurringList").innerHTML = `<p class="empty-state" style="padding:10px 0;">Aucun prélèvement récurrent pour l'instant. Ajoute-en un avec le bouton « + Ajouter » ci-dessus, ou laisse l'appli les détecter automatiquement après quelques mois.</p>`;
+    document.getElementById("recurringNote").textContent = "";
     return;
   }
-  card.style.display = "";
 
   const total = upcoming.reduce((s, u) => s + u.amount, 0);
   const projected = currentRemaining - total;
@@ -509,15 +516,45 @@ function renderRecurringExpenses(currentRemaining) {
 
   document.getElementById("recurringList").innerHTML = shown.map(u => `
     <div class="mini-item">
-      <span><span class="cat-tag">${u.cat ? catLabel(u.cat) : "🔸"}</span>${u.note}</span>
-      <span class="amt">−${money(u.amount)}</span>
+      <span><span class="cat-tag">${u.cat ? catLabel(u.cat) : "🔸"}</span>${escapeAttr(u.note)}</span>
+      <span class="amt">−${money(u.amount)}${u.manual ? ` <button type="button" class="icon-btn" data-delete-recurring="${u.id}" aria-label="Supprimer ${escapeAttr(u.note)}" style="vertical-align:middle;">✕</button>` : ""}</span>
     </div>`).join("") + (upcoming.length > shown.length
-      ? `<p class="hint" style="margin:6px 0 0;">+ ${upcoming.length - shown.length} autre${upcoming.length - shown.length > 1 ? "s" : ""} prélèvement${upcoming.length - shown.length > 1 ? "s" : ""} habituel${upcoming.length - shown.length > 1 ? "s" : ""}</p>`
+      ? `<p class="hint" style="margin:6px 0 0;">+ ${upcoming.length - shown.length} autre${upcoming.length - shown.length > 1 ? "s" : ""} prélèvement${upcoming.length - shown.length > 1 ? "s" : ""} récurrent${upcoming.length - shown.length > 1 ? "s" : ""}</p>`
       : "");
 
   document.getElementById("recurringNote").innerHTML =
-    `Il te reste probablement <strong>${moneySigned(projected)}</strong> une fois ces ${upcoming.length} prélèvement${upcoming.length > 1 ? "s" : ""} habituel${upcoming.length > 1 ? "s" : ""} passé${upcoming.length > 1 ? "s" : ""} (estimation basée sur ton historique).`;
+    `Il te reste probablement <strong>${moneySigned(projected)}</strong> une fois ces ${upcoming.length} prélèvement${upcoming.length > 1 ? "s" : ""} récurrent${upcoming.length > 1 ? "s" : ""} passé${upcoming.length > 1 ? "s" : ""} (estimation basée sur ton historique).`;
 }
+
+document.getElementById("openRecurringModalCard").addEventListener("click", () => {
+  const select = document.getElementById("recurringCategorySelect");
+  select.innerHTML = sortedCategories()
+    .filter(c => c.type === "expense")
+    .map(c => `<option value="${c.id}">${catLabel(c)}</option>`).join("");
+  document.getElementById("recurringForm").reset();
+  openModal("recurringModalOverlay");
+});
+
+document.getElementById("recurringForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const note = document.getElementById("recurringNoteInput").value.trim();
+  const catId = document.getElementById("recurringCategorySelect").value;
+  const amount = Math.abs(parseFloat(document.getElementById("recurringAmountInput").value)) || 0;
+  if (!note || amount <= 0) return;
+  state.manualRecurring.push({ id: uid(), note, catId, amount });
+  saveState();
+  document.getElementById("recurringForm").reset();
+  closeModal("recurringModalOverlay");
+  renderDashboard();
+});
+
+document.getElementById("recurringList").addEventListener("click", (e) => {
+  const id = e.target.closest("[data-delete-recurring]")?.dataset.deleteRecurring;
+  if (!id) return;
+  state.manualRecurring = state.manualRecurring.filter(m => m.id !== id);
+  saveState();
+  renderDashboard();
+});
 
 function renderDashboard() {
   const txs = transactionsForMonth(currentMonth);
