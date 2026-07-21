@@ -1129,6 +1129,8 @@ input:focus, select:focus {
 .pill-btn:hover { background: var(--wine-tint); }
 .pill-btn-ghost { border-color: var(--line); color: var(--ink-soft); }
 .pill-btn-ghost:hover { background: var(--neutral-hover); }
+#openCategoriesModalCard { background: var(--paper); }
+#openCategoriesModalCard:hover { background: var(--wine-tint); }
 .dropdown-wrap { position: relative; }
 .dropdown-menu {
   display: none;

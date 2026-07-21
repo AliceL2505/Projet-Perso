@@ -1350,11 +1350,15 @@ function budgetLabel(budgetId) {
 }
 
 function computeBudgetSpent(budgetId) {
-  // Somme nette : une dépense compte pour son montant, un remboursement lié au
-  // même budget vient réduire le coût réel plutôt que s'y ajouter.
+  // Somme nette. Pour un budget "dépense" : une dépense compte pour son montant,
+  // un remboursement lié au même budget vient réduire le coût réel plutôt que s'y ajouter.
+  // Pour un budget "rentrée d'argent" (ex : don reçu petit à petit) : c'est l'inverse,
+  // les opérations reçues s'additionnent pour suivre la progression vers la somme visée.
+  const budget = state.budgets.find(b => b.id === budgetId);
+  const sign = budget && budget.kind === "income" ? 1 : -1;
   return state.transactions
     .filter(t => t.budgetId === budgetId)
-    .reduce((s, t) => s - t.amount, 0);
+    .reduce((s, t) => s + sign * t.amount, 0);
 }
 
 // Ordre personnalisé des budgets (glisser-déposer), comme pour les catégories.
@@ -1377,10 +1381,11 @@ function budgetsSortedForDisplay() {
 const BUDGET_MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 function buildBudgetCard(b, archived) {
+  const isIncome = b.kind === "income";
   const spent = computeBudgetSpent(b.id);
   const hasTarget = b.target > 0;
   const realPct = hasTarget ? Math.round((spent / b.target) * 100) : 0;
-  const pct = hasTarget ? Math.min(100, realPct) : 0;
+  const pct = hasTarget ? Math.min(100, Math.max(0, realPct)) : 0;
   const cls = realPct > 100 ? "over" : "ok";
 
   let monthLabel = "";
@@ -1392,7 +1397,7 @@ function buildBudgetCard(b, archived) {
 
   const figuresText = hasTarget
     ? `${money(spent)} / ${money(b.target)} (${realPct}%)`
-    : `${money(spent)} dépensés jusqu'ici`;
+    : `${money(spent)} ${isIncome ? "reçus jusqu'ici" : "dépensés jusqu'ici"}`;
 
   const card = document.createElement("div");
   card.className = "project-card" + (archived ? " project-card-archived" : "");
@@ -1478,6 +1483,7 @@ document.getElementById("budgetList").addEventListener("click", (e) => {
     editingBudgetId = editId;
     document.getElementById("budgetModalTitle").textContent = "Modifier le budget";
     document.getElementById("budgetFormSubmitBtn").textContent = "Enregistrer les modifications";
+    document.getElementById("budgetKind").value = b.kind || "expense";
     document.getElementById("budgetName").value = b.name;
     document.getElementById("budgetTarget").value = b.target || "";
     document.getElementById("budgetDate").value = b.date ? b.date.slice(0, 7) : "";
@@ -1642,6 +1648,7 @@ document.getElementById("budgetLinkList").addEventListener("change", (e) => {
 
 document.getElementById("budgetForm").addEventListener("submit", (e) => {
   e.preventDefault();
+  const kind = document.getElementById("budgetKind").value === "income" ? "income" : "expense";
   const name = document.getElementById("budgetName").value.trim();
   const target = parseFloat(document.getElementById("budgetTarget").value) || 0;
   const date = document.getElementById("budgetDate").value || null;
@@ -1650,10 +1657,10 @@ document.getElementById("budgetForm").addEventListener("submit", (e) => {
 
   if (editingBudgetId) {
     const b = state.budgets.find(x => x.id === editingBudgetId);
-    if (b) { b.name = name; b.target = target; b.date = date; b.note = note; }
+    if (b) { b.kind = kind; b.name = name; b.target = target; b.date = date; b.note = note; }
     editingBudgetId = null;
   } else {
-    state.budgets.push({ id: uid(), name, target, date, note });
+    state.budgets.push({ id: uid(), kind, name, target, date, note });
   }
   saveState();
   document.getElementById("budgetForm").reset();
