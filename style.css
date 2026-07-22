@@ -1385,22 +1385,35 @@ input:focus, select:focus {
 /* Rangée plus resserrée que le tableau générique, avec un centrage vertical
    fiable de tous les éléments (texte, champs éditables, gélule, bouton). */
 .ops-table td {
-  padding: 0 12px !important;
+  padding: 6px 12px !important;
   height: 40px;
   box-sizing: border-box;
-  vertical-align: middle;
 }
-/* Chaque cellule de la table Opérations ne contient qu'un seul enfant : ce
-   conteneur flex. Comme flexbox centre ses enfants selon leur hauteur réelle
-   (et non selon la ligne de base du texte), la date, la catégorie, la note,
-   le montant et les icônes s'alignent enfin tous exactement de la même façon,
-   quel que soit le type d'élément natif (input date/number, select, bouton). */
+/* La table Opérations (#historyBody) a en plus besoin d'un centrage vertical
+   fiable pour ses champs éditables (date/catégorie/note/montant/actions).
+   Chaque cellule ne contient qu'un seul enfant : ce conteneur, positionné en
+   absolu de façon à occuper EXACTEMENT toute la hauteur de la cellule (top:0
+   / bottom:0), quel que soit le navigateur. On évite ainsi tout calcul basé
+   sur la ligne de base du texte ou sur un pourcentage de hauteur dans une
+   cellule de tableau (les deux sources du décalage observé). À l'intérieur,
+   le flex + align-items:center centre chaque élément selon sa hauteur réelle
+   (input date/number, select, texte, bouton) : ils s'alignent enfin tous
+   exactement pareil. (Scopé à #historyBody pour ne pas toucher le tableau
+   Suivi épargne, qui n'a pas ces champs éditables composites.) */
+#historyBody td {
+  padding: 0 !important;
+  height: 40px;
+  box-sizing: border-box;
+  position: relative;
+}
 .ops-cell {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
-  height: 100%;
-  width: 100%;
-  box-sizing: border-box;
   gap: 6px;
 }
 .ops-cell.ops-cell-end { justify-content: flex-end; }
