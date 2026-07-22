@@ -76,6 +76,42 @@ document.addEventListener("click", (e) => {
   }
 });
 
+/* ---------------- Confirmation de suppression (partagée par toute l'app) ----------------
+   Remplace les window.confirm() natifs par une pop-in "Es-tu sûr ?" cohérente avec le
+   design de l'app. `target` est un fragment de phrase inséré après "Tu t'apprêtes à
+   supprimer" (ex : "cette opération", "ce budget"), `action` est exécutée seulement si
+   la personne clique sur "Oui", `extraNote` ajoute une précision optionnelle (ex : quand
+   des opérations resteront rattachées à l'élément supprimé). */
+let pendingDeleteAction = null;
+function confirmDelete(target, action, extraNote) {
+  document.getElementById("deleteConfirmMessage").textContent =
+    `Tu t'apprêtes à supprimer ${target}.` + (extraNote ? ` ${extraNote}` : "");
+  pendingDeleteAction = action;
+  openModal("deleteConfirmOverlay");
+}
+document.getElementById("deleteConfirmYesBtn").addEventListener("click", () => {
+  const action = pendingDeleteAction;
+  pendingDeleteAction = null;
+  closeModal("deleteConfirmOverlay");
+  if (action) action();
+});
+document.getElementById("deleteConfirmCancelBtn").addEventListener("click", () => {
+  pendingDeleteAction = null;
+  closeModal("deleteConfirmOverlay");
+});
+
+/* ---------------- Bouton d'aide flottant ---------------- */
+document.getElementById("helpFabBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  document.getElementById("helpBubble").classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  const bubble = document.getElementById("helpBubble");
+  if (!bubble.classList.contains("open")) return;
+  if (e.target.closest("#helpBubble") || e.target.closest("#helpFabBtn")) return;
+  bubble.classList.remove("open");
+});
+
 document.getElementById("openTxModalCard").addEventListener("click", () => {
   editingTxId = null;
   document.getElementById("txModalTitle").textContent = "Nouvelle opération";
@@ -518,9 +554,11 @@ document.getElementById("recurringForm").addEventListener("submit", (e) => {
 document.getElementById("recurringList").addEventListener("click", (e) => {
   const id = e.target.closest("[data-delete-recurring]")?.dataset.deleteRecurring;
   if (!id) return;
-  state.manualRecurring = state.manualRecurring.filter(m => m.id !== id);
-  saveState();
-  renderDashboard();
+  confirmDelete("ce prélèvement récurrent", () => {
+    state.manualRecurring = state.manualRecurring.filter(m => m.id !== id);
+    saveState();
+    renderDashboard();
+  });
 });
 
 function renderDashboard() {
@@ -1060,12 +1098,17 @@ function handleCategoryListClick(e) {
   if (!id) return;
   const cat = catById(id);
   const used = state.transactions.some(t => t.categoryId === id);
-  if (used && !confirm(`« ${cat.name} » contient des opérations. La supprimer conservera ces opérations mais elles n'apparaîtront plus classées. Continuer ?`)) return;
-  state.categories = state.categories.filter(c => c.id !== id);
-  saveState();
-  renderCategoryList();
-  renderCategorySelect();
-  renderDashboard();
+  confirmDelete(
+    "cette catégorie",
+    () => {
+      state.categories = state.categories.filter(c => c.id !== id);
+      saveState();
+      renderCategoryList();
+      renderCategorySelect();
+      renderDashboard();
+    },
+    used ? "Les opérations déjà classées dedans seront conservées, mais n'apparaîtront plus classées." : null
+  );
 }
 
 document.getElementById("categoryListIncome").addEventListener("change", handleCategoryListChange);
@@ -1221,20 +1264,21 @@ document.getElementById("historyBody").addEventListener("click", (e) => {
   }
   const id = e.target.closest("[data-delete-tx]")?.dataset.deleteTx;
   if (!id) return;
-  if (!confirm("Supprimer cette opération ?")) return;
-  const t = state.transactions.find(tx => tx.id === id);
-  if (t && t.projectId) {
-    const proj = state.projects.find(p => p.id === t.projectId);
-    if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
-  }
-  if (t && t.savingsDeviceId) {
-    adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount));
-  }
-  state.transactions = state.transactions.filter(t => t.id !== id);
-  saveState();
-  renderHistory();
-  renderDashboard();
-  renderSavings();
+  confirmDelete("cette opération", () => {
+    const t = state.transactions.find(tx => tx.id === id);
+    if (t && t.projectId) {
+      const proj = state.projects.find(p => p.id === t.projectId);
+      if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
+    }
+    if (t && t.savingsDeviceId) {
+      adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount));
+    }
+    state.transactions = state.transactions.filter(t => t.id !== id);
+    saveState();
+    renderHistory();
+    renderDashboard();
+    renderSavings();
+  });
 });
 
 /* ---------------- Mes projets ---------------- */
@@ -1337,10 +1381,11 @@ document.getElementById("projectList").addEventListener("click", (e) => {
   }
   const id = e.target.dataset.deleteProject;
   if (!id) return;
-  if (!confirm("Supprimer ce projet ?")) return;
-  state.projects = state.projects.filter(p => p.id !== id);
-  saveState();
-  renderProjects();
+  confirmDelete("ce projet", () => {
+    state.projects = state.projects.filter(p => p.id !== id);
+    saveState();
+    renderProjects();
+  });
 });
 
 /* ---------------- Mes budgets (coût réel d'un évènement / d'une envie) ----------------
@@ -1508,13 +1553,18 @@ document.getElementById("budgetList").addEventListener("click", (e) => {
   const delId = e.target.closest("[data-delete-budget]")?.dataset.deleteBudget;
   if (delId) {
     const used = state.transactions.some(t => t.budgetId === delId);
-    if (used && !confirm("Ce budget contient des opérations liées. Elles resteront enregistrées mais ne seront plus rattachées à un budget. Continuer ?")) return;
-    state.budgets = state.budgets.filter(b => b.id !== delId);
-    state.transactions.forEach(t => { if (t.budgetId === delId) t.budgetId = null; });
-    saveState();
-    renderBudgets();
-    renderHistory();
-    renderTxBudgetOptions();
+    confirmDelete(
+      "ce budget",
+      () => {
+        state.budgets = state.budgets.filter(b => b.id !== delId);
+        state.transactions.forEach(t => { if (t.budgetId === delId) t.budgetId = null; });
+        saveState();
+        renderBudgets();
+        renderHistory();
+        renderTxBudgetOptions();
+      },
+      used ? "Les opérations qui lui sont rattachées resteront enregistrées, mais ne seront plus reliées à un budget." : null
+    );
     return;
   }
   if (budgetsDragJustHappened) { budgetsDragJustHappened = false; return; }
@@ -1806,10 +1856,11 @@ document.getElementById("creditList").addEventListener("click", (e) => {
   }
   const id = e.target.dataset.deleteCredit;
   if (!id) return;
-  if (!confirm("Supprimer ce crédit ?")) return;
-  state.credits = state.credits.filter(c => c.id !== id);
-  saveState();
-  renderCredits();
+  confirmDelete("ce crédit", () => {
+    state.credits = state.credits.filter(c => c.id !== id);
+    saveState();
+    renderCredits();
+  });
 });
 
 document.getElementById("openCreditModalCard").addEventListener("click", () => {
@@ -2112,10 +2163,11 @@ document.getElementById("savingsLegend").addEventListener("change", (e) => {
 document.getElementById("savingsBody").addEventListener("click", (e) => {
   const id = e.target.dataset.deleteSaving;
   if (!id) return;
-  if (!confirm("Supprimer ce mois d'épargne ?")) return;
-  state.savings = state.savings.filter(s => s.id !== id);
-  saveState();
-  renderSavings();
+  confirmDelete("ce mois d'épargne", () => {
+    state.savings = state.savings.filter(s => s.id !== id);
+    saveState();
+    renderSavings();
+  });
 });
 
 const savingsForm = document.getElementById("savingsForm");
@@ -2790,12 +2842,14 @@ document.getElementById("profileMenu").addEventListener("click", (e) => {
 });
 
 document.getElementById("resetDataBtn").addEventListener("click", () => {
-  const ok = confirm(
-    "Ceci va effacer les données stockées sur cet appareil pour ce profil et recharger les données par défaut de l'application. Cette action est irréversible. Continuer ?"
+  confirmDelete(
+    "toutes les données stockées sur cet appareil pour ce profil",
+    () => {
+      localStorage.removeItem(storageKeyFor(activeProfileId));
+      location.reload();
+    },
+    "Les données par défaut de l'application seront rechargées. Cette action est irréversible."
   );
-  if (!ok) return;
-  localStorage.removeItem(storageKeyFor(activeProfileId));
-  location.reload();
 });
 
 document.getElementById("profileSwitchList").addEventListener("click", (e) => {

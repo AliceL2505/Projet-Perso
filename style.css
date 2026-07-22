@@ -1618,3 +1618,93 @@ input:focus, select:focus {
   .sidebar-title h1 { font-size: 17px; }
   .dashboard-chart-col { flex-basis: 100%; }
 }
+
+/* ---------- Confirmation de suppression (modale partagée par toute l'app) ---------- */
+.delete-confirm-card {
+  max-width: 380px;
+  text-align: center;
+}
+.delete-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+.confirm-pill {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 30px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s ease, transform .1s ease;
+}
+.confirm-pill:active { transform: scale(0.97); }
+.confirm-pill-yes {
+  background: var(--wine);
+  border: 1.5px solid var(--wine);
+  color: #fff;
+}
+.confirm-pill-yes:hover { background: var(--wine-dim); border-color: var(--wine-dim); }
+.confirm-pill-cancel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.confirm-pill-cancel:hover { background: var(--neutral-hover); }
+
+/* ---------- Bouton d'aide flottant ---------- */
+.help-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--wine);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,.2);
+  z-index: 90;
+  transition: background .15s ease, transform .1s ease;
+}
+.help-fab:hover { background: var(--wine-dim); }
+.help-fab:active { transform: scale(0.95); }
+.help-bubble {
+  position: fixed;
+  bottom: 86px;
+  right: 24px;
+  max-width: 220px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--ink);
+  box-shadow: 0 6px 20px rgba(0,0,0,.16);
+  z-index: 90;
+  display: none;
+}
+.help-bubble p { margin: 0; }
+.help-bubble.open { display: block; }
+.help-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  right: 22px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+}

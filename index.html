@@ -919,6 +919,24 @@
       <p>Vos données restent sur cet appareil (aucun serveur, aucun compte).</p>
     </footer>
 
+    <!-- Confirmation de suppression (partagée par toute l'app) -->
+    <div class="modal-overlay" id="deleteConfirmOverlay">
+      <div class="modal-card delete-confirm-card">
+        <h2 class="section-title" style="margin-top:0;">Es-tu sûr ?</h2>
+        <p id="deleteConfirmMessage" class="hint" style="margin-top:-4px;"></p>
+        <div class="delete-confirm-actions">
+          <button type="button" id="deleteConfirmYesBtn" class="confirm-pill confirm-pill-yes">Oui</button>
+          <button type="button" id="deleteConfirmCancelBtn" class="confirm-pill confirm-pill-cancel">Annuler</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bouton d'aide flottant -->
+    <button type="button" id="helpFabBtn" class="help-fab" aria-label="Une question ?">?</button>
+    <div class="help-bubble" id="helpBubble">
+      <p>Une question ?</p>
+    </div>
+
   </div>
 </div>
 
