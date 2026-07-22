@@ -1385,10 +1385,26 @@ input:focus, select:focus {
 /* Rangée plus resserrée que le tableau générique, avec un centrage vertical
    fiable de tous les éléments (texte, champs éditables, gélule, bouton). */
 .ops-table td {
-  padding: 6px 12px !important;
+  padding: 0 12px !important;
   height: 40px;
   box-sizing: border-box;
+  vertical-align: middle;
 }
+/* Chaque cellule de la table Opérations ne contient qu'un seul enfant : ce
+   conteneur flex. Comme flexbox centre ses enfants selon leur hauteur réelle
+   (et non selon la ligne de base du texte), la date, la catégorie, la note,
+   le montant et les icônes s'alignent enfin tous exactement de la même façon,
+   quel que soit le type d'élément natif (input date/number, select, bouton). */
+.ops-cell {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 6px;
+}
+.ops-cell.ops-cell-end { justify-content: flex-end; }
+.ops-cell.ops-cell-actions { gap: 0; }
 .ops-table .icon-btn {
   all: unset;
   box-sizing: border-box;
