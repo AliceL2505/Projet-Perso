@@ -1513,6 +1513,24 @@ input:focus, select:focus {
   vertical-align: middle;
   cursor: text;
 }
+/* Affichage statique de la date (voir formatDateShort / startDateEdit dans app.js) :
+   du texte simple avec la même police que la note, pour un alignement fiable —
+   contrairement au <input type="date"> natif dont le rendu interne varie selon
+   le navigateur et ne s'alignait jamais parfaitement avec le reste de la ligne. */
+.date-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 4px;
+  font-size: 13.5px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.date-display:hover { background: var(--neutral-hover); }
+.date-display-icon { color: var(--ink-soft); flex-shrink: 0; }
 .amount-cell {
   display: inline-flex;
   align-items: center;

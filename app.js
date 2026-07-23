@@ -1146,6 +1146,16 @@ function renderHistoryFilterOptions() {
   if (prev) filter.value = prev;
 }
 
+// Format JJ/MM/AAAA pour l'affichage statique de la date d'une opération (voir
+// startDateEdit ci-dessous : on n'utilise un vrai <input type="date"> natif que
+// pendant l'édition, car son rendu interne ne s'aligne pas de façon fiable avec
+// le reste de la ligne selon les navigateurs).
+function formatDateShort(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
 function escapeAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -1195,7 +1205,7 @@ function renderHistory() {
     const budgLabelHist = budgetLabel(t.budgetId);
     const budgBadge = budgLabelHist ? `<span class="cat-tag" style="margin-right:4px;">🏷️ ${escapeAttr(budgLabelHist)}</span>` : "";
     tr.innerHTML = `
-      <td><div class="ops-cell"><input type="date" class="inline-date-input" data-tx-id="${t.id}" value="${t.date}" aria-label="Modifier la date"></div></td>
+      <td><div class="ops-cell"><span class="date-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="date-display-icon"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="date-display-text">${formatDateShort(t.date)}</span></span></div></td>
       <td><div class="ops-cell"><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></div></td>
       <td><div class="ops-cell">${projBadge}${devBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></div></td>
       <td><div class="ops-cell">${budgBadge || ""}</div></td>
@@ -1320,7 +1330,41 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
   renderSavings();
 });
 
+// Édition de la date : on ne fait apparaître le vrai <input type="date"> natif
+// qu'au moment du clic (voir formatDateShort ci-dessus pour l'explication).
+// La modification est ensuite prise en charge par l'écouteur "change" existant
+// sur #historyBody (même logique que les autres champs), qui déclenche un
+// renderHistory() -> l'input est alors automatiquement remplacé par le span.
+function startDateEdit(span) {
+  const wrapper = span.closest(".ops-cell");
+  if (!wrapper || wrapper.querySelector("input")) return;
+  const txId = span.dataset.txId;
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  const input = document.createElement("input");
+  input.type = "date";
+  input.className = "inline-date-input";
+  input.dataset.txId = txId;
+  input.value = t.date;
+  wrapper.innerHTML = "";
+  wrapper.appendChild(input);
+  input.focus();
+  if (input.showPicker) {
+    try { input.showPicker(); } catch (err) { /* pas critique si indisponible */ }
+  }
+  input.addEventListener("blur", () => {
+    // Si aucune modification n'a été faite, "change" ne s'est pas déclenché :
+    // on revient simplement à l'affichage texte.
+    if (document.body.contains(input)) renderHistory();
+  });
+}
+
 document.getElementById("historyBody").addEventListener("click", (e) => {
+  const dateSpan = e.target.closest(".date-display");
+  if (dateSpan) {
+    startDateEdit(dateSpan);
+    return;
+  }
   const editId = e.target.closest("[data-edit-tx]")?.dataset.editTx;
   if (editId) {
     openTxEditModal(editId);
