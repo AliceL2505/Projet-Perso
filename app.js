@@ -1209,6 +1209,70 @@ document.getElementById("historyFilter").addEventListener("change", renderHistor
 document.getElementById("historySearch").addEventListener("input", renderHistory);
 document.getElementById("historyAllMonths")?.addEventListener("change", renderHistory);
 
+/* ---------------- Colonnes redimensionnables (tableau Opérations) ----------------
+   Une poignée invisible (curseur ↔ au survol) est ajoutée entre chaque paire de
+   colonnes, sauf après la dernière (les icônes, qui restent à taille fixe). Au
+   premier redimensionnement, on fige les largeurs actuellement affichées (mode
+   "auto") dans un <colgroup>, pour ne rien changer visuellement tant que la
+   personne n'a pas commencé à faire glisser une poignée. Les largeurs choisies
+   sont mémorisées pour être réappliquées à la prochaine ouverture de l'app. */
+(function setupOpsColumnResize() {
+  const table = document.getElementById("opsTable");
+  if (!table) return;
+  const ths = [...table.querySelectorAll("thead th")];
+  const cols = [...table.querySelectorAll("colgroup col")];
+  if (!ths.length || ths.length !== cols.length) return;
+  const STORAGE_KEY = "oseille_opsColWidths";
+  const MIN_WIDTH = 50;
+
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+  if (Array.isArray(saved) && saved.length === cols.length) {
+    table.style.tableLayout = "fixed";
+    cols.forEach((col, i) => { col.style.width = saved[i] + "px"; });
+  }
+
+  ths.forEach((th, i) => {
+    if (i === ths.length - 1) return; // pas de poignée après la colonne d'icônes
+    const handle = document.createElement("div");
+    handle.className = "col-resize-handle";
+    th.appendChild(handle);
+
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Fige les largeurs actuellement affichées avant de commencer à redimensionner,
+      // pour partir exactement de l'aspect visuel en cours (rien ne bouge au clic).
+      const currentWidths = ths.map(t => t.getBoundingClientRect().width);
+      table.style.tableLayout = "fixed";
+      cols.forEach((col, idx) => { col.style.width = currentWidths[idx] + "px"; });
+
+      handle.classList.add("col-resizing");
+      const startX = e.clientX;
+      const startWidthLeft = currentWidths[i];
+      const startWidthRight = currentWidths[i + 1];
+
+      function onMouseMove(e2) {
+        const delta = e2.clientX - startX;
+        let newLeft = startWidthLeft + delta;
+        let newRight = startWidthRight - delta;
+        if (newLeft < MIN_WIDTH) { newRight -= (MIN_WIDTH - newLeft); newLeft = MIN_WIDTH; }
+        if (newRight < MIN_WIDTH) { newLeft -= (MIN_WIDTH - newRight); newRight = MIN_WIDTH; }
+        cols[i].style.width = newLeft + "px";
+        cols[i + 1].style.width = newRight + "px";
+      }
+      function onMouseUp() {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        handle.classList.remove("col-resizing");
+        const widths = cols.map(c => parseFloat(c.style.width) || 0);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(widths));
+      }
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    });
+  });
+})();
+
 document.getElementById("historyBody").addEventListener("change", (e) => {
   const txId = e.target.dataset.txId;
   if (!txId) return;

@@ -1381,6 +1381,23 @@ input:focus, select:focus {
 }
 .history-table .num { text-align: right; }
 
+/* ---------- Colonnes redimensionnables (tableau Opérations) ---------- */
+#opsTable th { position: relative; }
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 3;
+  touch-action: none;
+}
+.col-resize-handle:hover,
+.col-resize-handle.col-resizing {
+  background: var(--wine-tint);
+}
+
 /* ---------- Tableau compact (Opérations + Suivi épargne) ---------- */
 /* Rangée plus resserrée que le tableau générique, avec un centrage vertical
    fiable de tous les éléments (texte, champs éditables, gélule, bouton). */
@@ -1401,21 +1418,27 @@ input:focus, select:focus {
    exactement pareil. (Scopé à #historyBody pour ne pas toucher le tableau
    Suivi épargne, qui n'a pas ces champs éditables composites.) */
 #historyBody td {
+  /* Même gabarit que les cellules du tableau générique (Suivi annuel / Résumé
+     mensuel) : padding 10px/12px, bordure, police — seule la mécanique de
+     centrage change (ci-dessous), car ces cellules contiennent des champs
+     éditables (date/montant natifs) qui ont besoin d'un positionnement
+     absolu pour s'aligner correctement entre eux (contrairement au texte
+     simple des deux autres tableaux). */
   padding: 0 !important;
-  height: 40px;
+  height: 44px;
   box-sizing: border-box;
   position: relative;
 }
 .ops-cell {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 10px;
+  bottom: 10px;
   left: 12px;
   right: 12px;
   display: flex;
   align-items: flex-end;
-  padding-bottom: 8px;
   gap: 6px;
+  overflow: hidden;
 }
 .ops-cell.ops-cell-end { justify-content: flex-end; }
 .ops-cell.ops-cell-actions { gap: 0; }
