@@ -1564,6 +1564,25 @@ input:focus, select:focus {
   padding: 0 4px;
 }
 .amount-display:hover { background: var(--neutral-hover); }
+/* Affichage statique de la note (voir startNoteEdit dans app.js) : dernier
+   champ converti en texte simple pour la même raison que les précédents. */
+.note-display {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  font-size: 13.5px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note-display:hover { background: var(--neutral-hover); }
+.note-placeholder { color: var(--ink-soft); opacity: 0.7; }
 .amount-cell {
   display: inline-flex;
   align-items: center;

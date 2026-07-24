@@ -1214,7 +1214,7 @@ function renderHistory() {
     tr.innerHTML = `
       <td><div class="ops-cell"><span class="date-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="date-display-icon"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="date-display-text">${formatDateShort(t.date)}</span></span></div></td>
       <td><div class="ops-cell"><span class="cat-display cat-pill-select" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Changer la catégorie">${cat ? catLabel(cat) : "Sans catégorie"}</span></div></td>
-      <td><div class="ops-cell">${projBadge}${devBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></div></td>
+      <td><div class="ops-cell">${projBadge}${devBadge}<span class="note-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la note">${t.note ? escapeAttr(t.note) : '<span class="note-placeholder">Ajouter une note</span>'}</span></div></td>
       <td><div class="ops-cell">${budgBadge || ""}</div></td>
       <td class="num"><div class="ops-cell ops-cell-end"><span class="amount-cell"><span class="amount-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier le montant">${formatAmountShort(t.amount)}</span><span class="amount-suffix">€</span></span></div></td>
       <td><div class="ops-cell ops-cell-actions"><button class="icon-btn" data-edit-tx="${t.id}" aria-label="Modifier l'opération"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></div></td>`;
@@ -1394,6 +1394,29 @@ function startCatEdit(span) {
   });
 }
 
+// Édition de la note : même principe (voir startDateEdit). Le span peut avoir
+// des badges voisins (projet/dispositif/budget) : on ne remplace donc que le
+// span lui-même, pas tout le conteneur .ops-cell.
+function startNoteEdit(span) {
+  if (span.tagName === "INPUT") return;
+  const txId = span.dataset.txId;
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "inline-note-input";
+  input.dataset.txId = txId;
+  input.value = t.note || "";
+  input.placeholder = "Ajouter une note";
+  input.setAttribute("aria-label", "Modifier la note");
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  input.addEventListener("blur", () => {
+    if (document.body.contains(input)) renderHistory();
+  });
+}
+
 // Édition du montant : même principe (voir startDateEdit).
 function startAmountEdit(span) {
   const wrapper = span.closest(".amount-cell");
@@ -1425,6 +1448,11 @@ document.getElementById("historyBody").addEventListener("click", (e) => {
   const catSpan = e.target.closest(".cat-display");
   if (catSpan) {
     startCatEdit(catSpan);
+    return;
+  }
+  const noteSpan = e.target.closest(".note-display");
+  if (noteSpan) {
+    startNoteEdit(noteSpan);
     return;
   }
   const amountSpan = e.target.closest(".amount-display");
