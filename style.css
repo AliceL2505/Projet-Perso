@@ -1563,6 +1563,22 @@ input:focus, select:focus {
   padding: 0 4px;
 }
 .amount-display:hover { background: var(--neutral-hover) !important; }
+/* Ces éléments sont focusables au clavier (tabindex) pour l'accessibilité,
+   mais le contour bleu par défaut du navigateur ne correspond pas au style
+   de l'app : on le retire et on le remplace par un liseré lie-de-vin discret,
+   uniquement visible à la navigation clavier (focus-visible). */
+.date-display,
+.note-display,
+.amount-display,
+.cat-display {
+  outline: none;
+}
+.date-display:focus-visible,
+.note-display:focus-visible,
+.amount-display:focus-visible,
+.cat-display:focus-visible {
+  box-shadow: 0 0 0 2px var(--wine);
+}
 /* Affichage statique de la note (voir startNoteEdit dans app.js) : dernier
    champ converti en texte simple pour la même raison que les précédents. */
 .note-display {
