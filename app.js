@@ -1156,6 +1156,15 @@ function formatDateShort(iso) {
   return `${d}/${m}/${y}`;
 }
 
+// Idem pour le montant : un <input type="number"> natif a lui aussi un rendu
+// interne qui ne respecte pas toujours height/line-height selon le navigateur
+// (mêmes symptômes que <input type="date">). On affiche donc du texte simple,
+// et on ne fait apparaître le vrai champ natif qu'au clic pour éditer.
+function formatAmountShort(n) {
+  if (hideAmounts) return "••••";
+  return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function escapeAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -1195,9 +1204,7 @@ function renderHistory() {
   txs.forEach(t => {
     const tr = document.createElement("tr");
     if (t.amount >= 0) tr.className = "row-income";
-    const catOptions = sortedCategories()
-      .map(c => `<option value="${c.id}" ${c.id === t.categoryId ? "selected" : ""}>${catLabel(c)}</option>`)
-      .join("");
+    const cat = catById(t.categoryId);
     const proj = t.projectId ? state.projects.find(p => p.id === t.projectId) : null;
     const projBadge = proj ? `<span class="cat-tag" style="margin-right:4px;">🎯 ${escapeAttr(proj.name)}</span>` : "";
     const devLabelHist = deviceLabel(t.savingsDeviceId);
@@ -1206,10 +1213,10 @@ function renderHistory() {
     const budgBadge = budgLabelHist ? `<span class="cat-tag" style="margin-right:4px;">🏷️ ${escapeAttr(budgLabelHist)}</span>` : "";
     tr.innerHTML = `
       <td><div class="ops-cell"><span class="date-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="date-display-icon"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="date-display-text">${formatDateShort(t.date)}</span></span></div></td>
-      <td><div class="ops-cell"><select class="inline-cat-select cat-pill-select" data-tx-id="${t.id}" aria-label="Changer la catégorie">${catOptions}</select></div></td>
+      <td><div class="ops-cell"><span class="cat-display cat-pill-select" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Changer la catégorie">${cat ? catLabel(cat) : "Sans catégorie"}</span></div></td>
       <td><div class="ops-cell">${projBadge}${devBadge}<input type="text" class="inline-note-input" data-tx-id="${t.id}" value="${escapeAttr(t.note || "")}" placeholder="Ajouter une note" aria-label="Modifier la note"></div></td>
       <td><div class="ops-cell">${budgBadge || ""}</div></td>
-      <td class="num"><div class="ops-cell ops-cell-end"><span class="amount-cell"><input type="number" step="0.01" class="inline-amount-input" data-tx-id="${t.id}" value="${t.amount}" aria-label="Modifier le montant"><span class="amount-suffix">€</span></span></div></td>
+      <td class="num"><div class="ops-cell ops-cell-end"><span class="amount-cell"><span class="amount-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier le montant">${formatAmountShort(t.amount)}</span><span class="amount-suffix">€</span></span></div></td>
       <td><div class="ops-cell ops-cell-actions"><button class="icon-btn" data-edit-tx="${t.id}" aria-label="Modifier l'opération"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></div></td>`;
     body.appendChild(tr);
   });
@@ -1359,10 +1366,70 @@ function startDateEdit(span) {
   });
 }
 
+// Édition de la catégorie : même principe que la date (voir startDateEdit) —
+// on ne fait apparaître le vrai <select> natif qu'au clic, car son rendu
+// interne ne respecte pas toujours height/line-height selon le navigateur.
+function startCatEdit(span) {
+  const wrapper = span.closest(".ops-cell");
+  if (!wrapper || wrapper.querySelector("select")) return;
+  const txId = span.dataset.txId;
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  const catOptions = sortedCategories()
+    .map(c => `<option value="${c.id}" ${c.id === t.categoryId ? "selected" : ""}>${catLabel(c)}</option>`)
+    .join("");
+  const select = document.createElement("select");
+  select.className = "inline-cat-select cat-pill-select";
+  select.dataset.txId = txId;
+  select.setAttribute("aria-label", "Changer la catégorie");
+  select.innerHTML = catOptions;
+  wrapper.innerHTML = "";
+  wrapper.appendChild(select);
+  select.focus();
+  if (select.showPicker) {
+    try { select.showPicker(); } catch (err) { /* pas critique si indisponible */ }
+  }
+  select.addEventListener("blur", () => {
+    if (document.body.contains(select)) renderHistory();
+  });
+}
+
+// Édition du montant : même principe (voir startDateEdit).
+function startAmountEdit(span) {
+  const wrapper = span.closest(".amount-cell");
+  if (!wrapper || wrapper.querySelector("input")) return;
+  const txId = span.dataset.txId;
+  const t = state.transactions.find(tx => tx.id === txId);
+  if (!t) return;
+  const input = document.createElement("input");
+  input.type = "number";
+  input.step = "0.01";
+  input.className = "inline-amount-input";
+  input.dataset.txId = txId;
+  input.value = t.amount;
+  input.setAttribute("aria-label", "Modifier le montant");
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  input.addEventListener("blur", () => {
+    if (document.body.contains(input)) renderHistory();
+  });
+}
+
 document.getElementById("historyBody").addEventListener("click", (e) => {
   const dateSpan = e.target.closest(".date-display");
   if (dateSpan) {
     startDateEdit(dateSpan);
+    return;
+  }
+  const catSpan = e.target.closest(".cat-display");
+  if (catSpan) {
+    startCatEdit(catSpan);
+    return;
+  }
+  const amountSpan = e.target.closest(".amount-display");
+  if (amountSpan) {
+    startAmountEdit(amountSpan);
     return;
   }
   const editId = e.target.closest("[data-edit-tx]")?.dataset.editTx;

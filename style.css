@@ -1458,7 +1458,7 @@ input:focus, select:focus {
   font-size: 15px;
 }
 .ops-table .icon-btn:hover { color: var(--danger); }
-.ops-table .cat-tag { display: inline-flex; align-items: center; height: 24px; vertical-align: middle; }
+.ops-table .cat-tag { display: inline-flex; align-items: center; height: 24px; vertical-align: middle; padding: 0 4px; box-sizing: border-box; }
 .history-table th.num { text-align: right; }
 .row-income td.num { color: var(--success); }
 .inline-cat-select {
@@ -1503,7 +1503,7 @@ input:focus, select:focus {
   align-items: center;
   height: 24px !important;
   line-height: 24px !important;
-  padding: 0 8px !important;
+  padding: 0 4px !important;
   margin: 0;
   font-size: 13.5px;
   font-family: var(--font-body);
@@ -1512,6 +1512,14 @@ input:focus, select:focus {
   width: 100%;
   vertical-align: middle;
   cursor: text;
+}
+/* Le picto calendrier natif de l'input date (affiché seulement pendant l'édition,
+   voir startDateEdit) a par défaut un fond légèrement bleuté dans certains
+   navigateurs : on le rend transparent pour qu'il se fonde dans le fond du
+   tableau plutôt que de trancher dessus. */
+.inline-date-input::-webkit-calendar-picker-indicator {
+  background: transparent;
+  background-color: transparent;
 }
 /* Affichage statique de la date (voir formatDateShort / startDateEdit dans app.js) :
    du texte simple avec la même police que la note, pour un alignement fiable —
@@ -1531,6 +1539,31 @@ input:focus, select:focus {
 }
 .date-display:hover { background: var(--neutral-hover); }
 .date-display-icon { color: var(--ink-soft); flex-shrink: 0; }
+/* Affichage statique de la catégorie et du montant : même raisonnement que la
+   date (voir plus haut). .cat-display porte la mécanique (affichage/curseur),
+   .cat-pill-select porte l'habillage visuel (fond/couleur/arrondi), déjà
+   utilisé ailleurs pour la gélule catégorie. */
+.cat-display {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.amount-display {
+  font-size: 13.5px;
+  font-family: var(--font-body);
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 6px;
+  padding: 0 4px;
+}
+.amount-display:hover { background: var(--neutral-hover); }
 .amount-cell {
   display: inline-flex;
   align-items: center;
