@@ -1571,7 +1571,9 @@ input:focus, select:focus {
 .note-display,
 .amount-display,
 .cat-display {
-  outline: none;
+  outline: none !important;
+  border: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 .date-display:focus-visible,
 .note-display:focus-visible,
