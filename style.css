@@ -1419,16 +1419,13 @@ input:focus, select:focus {
    Suivi épargne, qui n'a pas ces champs éditables composites.) */
 #historyBody td {
   /* Même gabarit que les cellules du tableau générique (Suivi annuel / Résumé
-     mensuel) : padding proche de 10px/12px, bordure, police — seule la
-     mécanique de centrage change (ci-dessous), car ces cellules contiennent
-     des champs éditables (date/montant natifs) qui ont besoin d'un
-     positionnement absolu pour s'aligner correctement entre eux
-     (contrairement au texte simple des deux autres tableaux). La hauteur
-     réelle des champs natifs (date, montant) dépasse légèrement leur
-     hauteur CSS nominale selon le navigateur : on garde donc un peu plus de
-     marge que 10px pour ne jamais couper le texte. */
+     mensuel), avec une hauteur ajustée pour que l'espace au-dessus et en
+     dessous du contenu (7px chacun) soit strictement identique : tout le
+     contenu de la ligne est désormais du texte simple de 24px de haut
+     (date/catégorie/note/montant), donc plus besoin de marge de sécurité
+     supplémentaire comme du temps des champs natifs. */
   padding: 0 !important;
-  height: 46px;
+  height: 38px;
   box-sizing: border-box;
   position: relative;
 }
@@ -1439,7 +1436,7 @@ input:focus, select:focus {
   left: 12px;
   right: 12px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 6px;
   overflow: visible;
 }
@@ -1533,11 +1530,12 @@ input:focus, select:focus {
   padding: 0 4px;
   font-size: 13.5px;
   font-family: var(--font-body);
-  color: var(--ink);
+  color: var(--ink) !important;
+  background: transparent !important;
   border-radius: 6px;
   cursor: pointer;
 }
-.date-display:hover { background: var(--neutral-hover); }
+.date-display:hover { background: var(--neutral-hover) !important; }
 .date-display-icon { color: var(--ink-soft); flex-shrink: 0; }
 /* Affichage statique de la catégorie et du montant : même raisonnement que la
    date (voir plus haut). .cat-display porte la mécanique (affichage/curseur),
@@ -1557,13 +1555,14 @@ input:focus, select:focus {
 .amount-display {
   font-size: 13.5px;
   font-family: var(--font-body);
-  color: inherit;
+  color: inherit !important;
+  background: transparent !important;
   cursor: pointer;
   white-space: nowrap;
   border-radius: 6px;
   padding: 0 4px;
 }
-.amount-display:hover { background: var(--neutral-hover); }
+.amount-display:hover { background: var(--neutral-hover) !important; }
 /* Affichage statique de la note (voir startNoteEdit dans app.js) : dernier
    champ converti en texte simple pour la même raison que les précédents. */
 .note-display {
@@ -1574,14 +1573,15 @@ input:focus, select:focus {
   padding: 0 4px;
   font-size: 13.5px;
   font-family: var(--font-body);
-  color: var(--ink);
+  color: var(--ink) !important;
+  background: transparent !important;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.note-display:hover { background: var(--neutral-hover); }
+.note-display:hover { background: var(--neutral-hover) !important; }
 .note-placeholder { color: var(--ink-soft); opacity: 0.7; }
 .amount-cell {
   display: inline-flex;
