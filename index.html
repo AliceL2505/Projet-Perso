@@ -411,6 +411,14 @@
             <select id="historyFilter">
               <option value="all">Toutes les catégories</option>
             </select>
+            <div class="dropdown-wrap">
+              <button type="button" class="pill-btn" data-toggle-menu="historyExportMenu">Exporter</button>
+              <div class="dropdown-menu" id="historyExportMenu">
+                <button type="button" class="export-btn" data-export="xlsx" data-table="opsTable" data-name="historique-operations">Excel (.xlsx)</button>
+                <button type="button" class="export-btn" data-export="image" data-table="opsTable" data-name="historique-operations">Image (.png)</button>
+                <button type="button" class="export-btn" data-export="pdf" data-table="opsTable" data-name="historique-operations">PDF</button>
+              </div>
+            </div>
           </div>
         </div>
         <table class="history-table ops-table" id="opsTable">
