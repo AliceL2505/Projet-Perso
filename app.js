@@ -13,6 +13,7 @@ const ACTIVE_PROFILE_KEY = "oseille_activeProfile";
 const DEFAULT_PROFILES = [
   { id: "alice", name: "Alice" },
   { id: "louise", name: "Louise" },
+  { id: "test-mobile", name: "Test Mobile" },
 ];
 
 function getProfiles() {
@@ -248,6 +249,24 @@ function loadState(profileId) {
 
   if (profileId === "louise") {
     // Profil de démonstration Louise : jeune active, budget serré mais équilibré.
+    const seeded = LOUISE_SEED_TRANSACTIONS.map(t => ({ ...t, id: uid() }));
+    return {
+      categories: LOUISE_CATEGORIES.map(c => ({ ...c })),
+      transactions: seeded,
+      projects: [],
+      budgets: [],
+      manualRecurring: [],
+      savings: [],
+      savingsDevices: [],
+      credits: [],
+      soldeCourant: { amount: 0, date: null },
+    };
+  }
+
+  if (profileId === "test-mobile") {
+    // Profil isolé dédié à la prévisualisation de la version mobile : jeu de
+    // données de démo (identique à Louise), stocké séparément, sans impact
+    // sur les autres profils.
     const seeded = LOUISE_SEED_TRANSACTIONS.map(t => ({ ...t, id: uid() }));
     return {
       categories: LOUISE_CATEGORIES.map(c => ({ ...c })),
@@ -3009,7 +3028,16 @@ function switchProfile(profileId) {
   setActiveProfileId(profileId);
   state = loadState(activeProfileId);
   renderProfileSwitcher();
+  applyMobilePreviewMode();
   renderAll();
+}
+
+/* ---------------- Aperçu mobile isolé (profil "Test Mobile") ----------------
+   N'affecte que ce profil : un simple cadre "téléphone" en CSS est activé
+   uniquement quand ce profil est actif, pour visualiser une version mobile
+   de l'app sans impacter les autres profils ni redimensionner la fenêtre. */
+function applyMobilePreviewMode() {
+  document.body.classList.toggle("mobile-preview-mode", activeProfileId === "test-mobile");
 }
 
 document.getElementById("profileButton").addEventListener("click", (e) => {
@@ -3089,6 +3117,7 @@ function unlockApp() {
   applyHideAmountsUI();
   applySidebarState();
   renderProfileSwitcher();
+  applyMobilePreviewMode();
   updateTopbarVisibility("dashboard");
   renderAll();
 }
