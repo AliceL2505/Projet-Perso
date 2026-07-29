@@ -1262,14 +1262,12 @@ function escapeAttr(s) {
    tout est affiché) : ça permet à "Tout sélectionner" de rester la valeur par
    défaut sans avoir à connaître la liste complète à l'avance. */
 const OPS_FILTER_COLUMNS = {
-  date: { key: t => t.date, label: t => formatDateShort(t.date) },
   category: {
     key: t => t.categoryId || "__none__",
     label: t => { const c = catById(t.categoryId); return c ? catLabel(c) : "Sans catégorie"; },
-  },
-  note: {
-    key: t => (t.note || "").trim() || "__none__",
-    label: t => (t.note || "").trim() || "(Aucune note)",
+    // La catégorie s'affiche comme une pastille (même style que dans le tableau),
+    // pas comme du texte brut, pour rester cohérent avec le reste de l'app.
+    renderOption: t => { const c = catById(t.categoryId); return `<span class="cat-display cat-pill-select">${c ? escapeAttr(catLabel(c)) : "Sans catégorie"}</span>`; },
   },
   budget: {
     key: t => t.budgetId || "__none__",
@@ -1281,7 +1279,29 @@ const OPS_FILTER_COLUMNS = {
   },
 };
 
-const opsColumnFilters = { date: new Set(), category: new Set(), note: new Set(), budget: new Set(), amount: new Set() };
+const opsColumnFilters = { category: new Set(), budget: new Set(), amount: new Set() };
+
+// Filtre "Date" : contrairement aux autres colonnes, pas de liste déroulante —
+// juste un sélecteur de date unique (jour/mois/année). null = pas de filtre.
+let opsDateFilterValue = null;
+
+function updateOpsDateFilterUI() {
+  const btn = document.querySelector('[data-toggle-menu="opsFilterMenu-date"]');
+  if (btn) btn.classList.toggle("active", !!opsDateFilterValue);
+  const input = document.getElementById("opsDateFilterInput");
+  if (input && input.value !== (opsDateFilterValue || "")) input.value = opsDateFilterValue || "";
+}
+
+document.getElementById("opsDateFilterInput").addEventListener("change", (e) => {
+  opsDateFilterValue = e.target.value || null;
+  updateOpsDateFilterUI();
+  renderHistory();
+});
+document.getElementById("opsDateFilterClearBtn").addEventListener("click", () => {
+  opsDateFilterValue = null;
+  updateOpsDateFilterUI();
+  renderHistory();
+});
 
 function opsRowPassesColumnFilters(t) {
   return Object.keys(OPS_FILTER_COLUMNS).every(colKey => {
@@ -1299,12 +1319,12 @@ function renderOpsColumnFilterMenus(baseTxs) {
     const menu = document.getElementById(`opsFilterMenu-${colKey}`);
     if (!menu) return;
     const cfg = OPS_FILTER_COLUMNS[colKey];
-    const seen = new Map();
+    const seen = new Map(); // key -> { label, tx } (une opération représentative, pour renderOption)
     baseTxs.forEach(t => {
       const k = cfg.key(t);
-      if (!seen.has(k)) seen.set(k, cfg.label(t));
+      if (!seen.has(k)) seen.set(k, { label: cfg.label(t), tx: t });
     });
-    const entries = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1], "fr"));
+    const entries = [...seen.entries()].sort((a, b) => a[1].label.localeCompare(b[1].label, "fr"));
     const excluded = opsColumnFilters[colKey];
     const anyChecked = entries.some(([k]) => !excluded.has(k));
     const allChecked = entries.every(([k]) => !excluded.has(k));
@@ -1318,10 +1338,10 @@ function renderOpsColumnFilterMenus(baseTxs) {
         Tout sélectionner
       </label>
       <div class="col-filter-divider"></div>
-      ${entries.length ? entries.map(([k, label]) => `
+      ${entries.length ? entries.map(([k, { label, tx }]) => `
         <label class="col-filter-option">
           <input type="checkbox" class="ops-row-check col-filter-value" data-colfilter-col="${colKey}" data-colfilter-key="${escapeAttr(k)}" ${excluded.has(k) ? "" : "checked"}>
-          ${escapeAttr(label) || "&nbsp;"}
+          ${cfg.renderOption ? cfg.renderOption(tx) : (escapeAttr(label) || "&nbsp;")}
         </label>
       `).join("") : `<p class="hint" style="padding:6px 14px; margin:0;">Aucune valeur ce mois-ci</p>`}
     `;
@@ -1395,8 +1415,10 @@ function renderHistory() {
   if (titleEl) titleEl.textContent = allMonths ? "Historique (toutes les périodes)" : "Historique du mois";
   const baseTxs = allMonths ? state.transactions.slice() : transactionsForMonth(currentMonth);
   renderOpsColumnFilterMenus(baseTxs);
+  updateOpsDateFilterUI();
   const txs = baseTxs
     .filter(t => filterValue === "all" || t.categoryId === filterValue)
+    .filter(t => !opsDateFilterValue || t.date === opsDateFilterValue)
     .filter(opsRowPassesColumnFilters)
     .filter(t => {
       if (!searchValue) return true;
@@ -1434,8 +1456,9 @@ function renderHistory() {
       <td class="ops-check-td"><input type="checkbox" class="ops-row-check" data-tx-id="${t.id}" aria-label="Sélectionner cette opération" ${selectedOpsIds.has(t.id) ? "checked" : ""}></td>
       <td><div class="ops-cell"><span class="date-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="date-display-icon"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="date-display-text">${formatDateShort(t.date)}</span></span></div></td>
       <td><div class="ops-cell"><span class="cat-display cat-pill-select" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Changer la catégorie">${cat ? catLabel(cat) : "Sans catégorie"}</span></div></td>
-      <td><div class="ops-cell">${projBadge}${devBadge}<span class="note-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la note">${t.note ? escapeAttr(t.note) : '<span class="note-placeholder">Ajouter une note</span>'}</span></div></td>
+      <td><div class="ops-cell">${projBadge}<span class="note-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la note">${t.note ? escapeAttr(t.note) : '<span class="note-placeholder">Ajouter une note</span>'}</span></div></td>
       <td><div class="ops-cell">${budgBadge || ""}</div></td>
+      <td><div class="ops-cell">${devBadge || ""}</div></td>
       <td class="num"><div class="ops-cell ops-cell-end"><span class="amount-cell"><span class="amount-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier le montant">${formatAmountShort(t.amount)}</span><span class="amount-suffix">€</span></span></div></td>
       <td><div class="ops-cell ops-cell-actions"><button class="icon-btn" data-edit-tx="${t.id}" aria-label="Modifier l'opération"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></div></td>`;
     body.appendChild(tr);

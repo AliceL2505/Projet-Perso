@@ -431,27 +431,30 @@
         </div>
         <table class="history-table ops-table" id="opsTable">
           <colgroup>
-            <col class="ops-check-col"><col><col><col><col><col><col>
+            <col class="ops-check-col"><col><col><col><col><col><col><col>
           </colgroup>
           <thead>
             <tr>
               <th class="ops-check-col"><input type="checkbox" id="opsSelectAllCheckbox" aria-label="Tout sélectionner"></th>
               <th>Date
                 <button type="button" class="col-filter-btn" data-toggle-menu="opsFilterMenu-date" aria-label="Filtrer par date"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button>
-                <div class="dropdown-menu col-filter-menu" id="opsFilterMenu-date"></div>
+                <div class="dropdown-menu col-filter-menu col-filter-menu-date" id="opsFilterMenu-date">
+                  <label class="col-filter-date-label">Date précise
+                    <input type="date" id="opsDateFilterInput">
+                  </label>
+                  <button type="button" class="pill-btn pill-btn-ghost col-filter-date-clear" id="opsDateFilterClearBtn">Effacer</button>
+                </div>
               </th>
               <th>Catégorie
                 <button type="button" class="col-filter-btn" data-toggle-menu="opsFilterMenu-category" aria-label="Filtrer par catégorie"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button>
                 <div class="dropdown-menu col-filter-menu" id="opsFilterMenu-category"></div>
               </th>
-              <th>Note
-                <button type="button" class="col-filter-btn" data-toggle-menu="opsFilterMenu-note" aria-label="Filtrer par note"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button>
-                <div class="dropdown-menu col-filter-menu" id="opsFilterMenu-note"></div>
-              </th>
+              <th>Note</th>
               <th>Budget associé
                 <button type="button" class="col-filter-btn" data-toggle-menu="opsFilterMenu-budget" aria-label="Filtrer par budget associé"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button>
                 <div class="dropdown-menu col-filter-menu" id="opsFilterMenu-budget"></div>
               </th>
+              <th>Épargne</th>
               <th class="num">Montant
                 <button type="button" class="col-filter-btn" data-toggle-menu="opsFilterMenu-amount" aria-label="Filtrer par montant"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg></button>
                 <div class="dropdown-menu col-filter-menu" id="opsFilterMenu-amount"></div>
