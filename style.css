@@ -1472,15 +1472,18 @@ input:focus, select:focus {
 .col-filter-option-all { font-weight: 600; }
 .col-filter-divider { height: 1px; background: var(--line); margin: 4px 0; }
 
-/* Filtre "Date" : pas de liste, juste un sélecteur de date unique. */
+/* Filtre "Date" : pas de liste, juste un sélecteur de date unique. Le
+   "display: flex" ne doit s'appliquer qu'une fois le menu ouvert (classe
+   .open) — sinon il écrase le "display: none" par défaut de .dropdown-menu
+   et le menu reste visible en permanence au lieu de n'apparaître qu'au clic. */
 .col-filter-menu-date {
   padding: 12px 14px;
-  display: flex;
   flex-direction: column;
   gap: 10px;
   max-height: none;
   overflow: visible;
 }
+.col-filter-menu-date.open { display: flex; }
 .col-filter-date-label {
   display: flex;
   flex-direction: column;
