@@ -1286,6 +1286,38 @@ input:focus, select:focus {
 .budget-input-wrap input[type=number]:focus { outline: none; }
 .budget-input-wrap .unit { color: var(--ink-soft); font-size: 13px; flex-shrink: 0; }
 .category-item-income .budget-placeholder { flex-shrink: 0; width: 92px; }
+
+/* ---------- Période de validité optionnelle d'une catégorie ---------- */
+.cat-period-badge {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.75;
+}
+.cat-period-badge:hover { opacity: 1; }
+.category-item-editing {
+  height: auto;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 10px;
+}
+.cat-period-row {
+  flex: 1 1 100%;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-left: 3px;
+}
+.cat-period-field {
+  gap: 3px;
+  font-size: 11px;
+}
+.cat-period-field input[type="month"] {
+  font-size: 12.5px;
+  padding: 5px 8px;
+  height: 30px;
+}
 .icon-btn {
   background: none;
   border: none;
@@ -1823,6 +1855,40 @@ input:focus, select:focus {
   border-bottom: 1px solid var(--line);
   transform: rotate(45deg);
 }
+
+/* ---------- Sélection multiple (case à cocher) — tableau Opérations ---------- */
+#opsTable th.ops-check-col,
+#historyBody td.ops-check-td {
+  width: 34px;
+  text-align: center;
+  vertical-align: middle;
+}
+#opsSelectAllCheckbox,
+.ops-row-check {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--wine);
+}
+.bulk-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--wine-tint);
+  border: 1px solid var(--wine);
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  margin-bottom: 12px;
+}
+.bulk-actions-count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--wine-dim);
+  margin-right: auto;
+}
+.ops-bulk-cat-menu { max-height: 260px; overflow-y: auto; }
 
 /* =========================================================
    Aperçu mobile — profil "Test Mobile" UNIQUEMENT

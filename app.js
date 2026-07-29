@@ -392,6 +392,24 @@ function catLabel(cat) {
   return `${catEmoji(cat)} ${cat.name}`;
 }
 
+// Formate un mois au format natif <input type="month"> ("AAAA-MM") en libellé
+// lisible ("janvier 2026"), pour la période de validité optionnelle d'une catégorie.
+function formatMonthYear(ym) {
+  if (!ym) return "";
+  const [y, m] = ym.split("-").map(Number);
+  if (!y || !m) return "";
+  return new Date(y, m - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+}
+
+// Libellé de la période de validité optionnelle d'une catégorie (utilisé pour
+// le badge 📅 affiché sur la ligne quand une période est définie).
+function catPeriodLabel(cat) {
+  if (cat.validFrom && cat.validUntil) return `Du ${formatMonthYear(cat.validFrom)} au ${formatMonthYear(cat.validUntil)}`;
+  if (cat.validFrom) return `À partir de ${formatMonthYear(cat.validFrom)}`;
+  if (cat.validUntil) return `Jusqu'au ${formatMonthYear(cat.validUntil)}`;
+  return "";
+}
+
 const PIE_COLORS = ["#B98593", "#9B8AA6", "#C9A66B", "#D97A6C", "#7C9BAE", "#E0A899", "#B9A38C", "#9FA8C9", "#CBB994", "#8B9DC3", "#C7A6C9", "#A98B7A"];
 const CATEGORY_COLORS = {
   courses: "#B98593",
@@ -1039,8 +1057,10 @@ function renderCategoryList() {
     cats.forEach(cat => {
       const row = document.createElement("div");
       row.className = "category-item" + (cat.type === "income" ? " category-item-income" : "");
+      const periodTitle = catPeriodLabel(cat);
       row.innerHTML = `
-        <span class="cname" data-rename-cat="${cat.id}" title="Cliquer pour renommer">${catLabel(cat)}</span>
+        <span class="cname" data-rename-cat="${cat.id}" title="Cliquer pour modifier">${catLabel(cat)}</span>
+        ${periodTitle ? `<span class="cat-period-badge" data-rename-cat="${cat.id}" title="${periodTitle}">📅</span>` : ""}
         ${cat.type === "expense" ? `<span class="budget-input-wrap"><input type="number" min="0" step="1" value="${cat.budget || 0}" data-budget-for="${cat.id}" aria-label="Budget mensuel pour ${cat.name}"><span class="unit">€</span></span>` : `<span class="budget-placeholder"></span>`}
         <button class="icon-btn" data-delete-cat="${cat.id}" title="Supprimer la catégorie" aria-label="Supprimer ${cat.name}">✕</button>
       `;
@@ -1075,14 +1095,41 @@ function splitEmojiAndName(str) {
 // une seule fois sur la catégorie (state.categories), donc les modifier met automatiquement
 // à jour tous les endroits où la catégorie apparaît (jauges, opérations, historique...).
 function startCategoryRename(span, cat) {
-  if (span.querySelector("input")) return; // déjà en cours d'édition
+  const row = span.closest(".category-item");
+  if (!row || row.classList.contains("category-item-editing")) return; // déjà en cours d'édition
+  row.classList.add("category-item-editing");
+
+  // Le clic peut venir du nom OU du badge 📅 : dans les deux cas on remplace le
+  // nom par le champ texte (le badge, lui, disparaît simplement — il est
+  // remplacé par les deux champs de période ci-dessous, toujours visibles en
+  // mode édition).
+  const nameSpan = row.querySelector(".cname");
+  const badge = row.querySelector(".cat-period-badge");
+  if (badge) badge.remove();
+
   const input = document.createElement("input");
   input.type = "text";
   input.className = "cname-edit-input";
   input.value = catLabel(cat);
-  span.replaceWith(input);
+  nameSpan.replaceWith(input);
   input.focus();
   input.select();
+
+  // Champs optionnels de période de validité : seuls le mois et l'année sont
+  // demandés (type="month"), pas de jour.
+  const periodRow = document.createElement("div");
+  periodRow.className = "cat-period-row";
+  periodRow.innerHTML = `
+    <label class="cat-period-field">à partir de
+      <input type="month" class="cat-period-input" data-period="from" value="${cat.validFrom || ""}">
+    </label>
+    <label class="cat-period-field">jusqu'au
+      <input type="month" class="cat-period-input" data-period="until" value="${cat.validUntil || ""}">
+    </label>
+  `;
+  row.appendChild(periodRow);
+  const fromInput = periodRow.querySelector('[data-period="from"]');
+  const untilInput = periodRow.querySelector('[data-period="until"]');
 
   let done = false;
   const commit = () => {
@@ -1092,6 +1139,10 @@ function startCategoryRename(span, cat) {
     let changed = false;
     if (name && name !== cat.name) { cat.name = name; changed = true; }
     if (emoji && emoji !== catEmoji(cat)) { cat.emoji = emoji; changed = true; }
+    const newFrom = fromInput.value || null;
+    const newUntil = untilInput.value || null;
+    if (newFrom !== (cat.validFrom || null)) { cat.validFrom = newFrom; changed = true; }
+    if (newUntil !== (cat.validUntil || null)) { cat.validUntil = newUntil; changed = true; }
     if (changed) saveState();
     renderCategoryList();
     renderCategorySelect();
@@ -1099,11 +1150,22 @@ function startCategoryRename(span, cat) {
     renderHistory();
   };
 
+  // On ne valide que lorsque le focus quitte complètement la ligne (nom ET
+  // champs de période), pas à chaque changement de champ interne.
+  row.addEventListener("focusout", (e) => {
+    if (!row.contains(e.relatedTarget)) commit();
+  });
+
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); input.blur(); }
     else if (e.key === "Escape") { done = true; renderCategoryList(); }
   });
-  input.addEventListener("blur", commit);
+  [fromInput, untilInput].forEach(el => {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); el.blur(); }
+      else if (e.key === "Escape") { done = true; renderCategoryList(); }
+    });
+  });
 }
 
 function handleCategoryListClick(e) {
@@ -1188,8 +1250,45 @@ function escapeAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Sélection multiple (case à cocher tout à gauche de chaque ligne) pour changer
+// la catégorie de plusieurs opérations à la fois. Persiste tant que les
+// opérations existent, même si la ligne n'est plus affichée (recherche/filtre) :
+// on la nettoie juste des identifiants d'opérations supprimées.
+let selectedOpsIds = new Set();
+
+function renderOpsBulkCatMenu() {
+  const menu = document.getElementById("opsBulkCatMenu");
+  if (!menu) return;
+  menu.innerHTML = sortedCategories()
+    .map(c => `<button type="button" data-bulk-cat="${c.id}">${catLabel(c)}</button>`)
+    .join("");
+}
+
+function updateOpsBulkBar() {
+  selectedOpsIds.forEach(id => {
+    if (!state.transactions.some(t => t.id === id)) selectedOpsIds.delete(id);
+  });
+  const bar = document.getElementById("opsBulkBar");
+  const count = selectedOpsIds.size;
+  document.getElementById("opsBulkCount").textContent =
+    count > 1 ? `${count} opérations sélectionnées` : `${count} opération sélectionnée`;
+  bar.style.display = count > 0 ? "flex" : "none";
+
+  const rowChecks = [...document.querySelectorAll("#historyBody .ops-row-check")];
+  const selectAll = document.getElementById("opsSelectAllCheckbox");
+  if (rowChecks.length) {
+    const checkedCount = rowChecks.filter(cb => cb.checked).length;
+    selectAll.checked = checkedCount === rowChecks.length;
+    selectAll.indeterminate = checkedCount > 0 && checkedCount < rowChecks.length;
+  } else {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+  }
+}
+
 function renderHistory() {
   renderHistoryFilterOptions();
+  renderOpsBulkCatMenu();
   const filterValue = document.getElementById("historyFilter").value;
   const searchValue = document.getElementById("historySearch").value.trim().toLowerCase();
   const allMonths = document.getElementById("historyAllMonths")?.checked;
@@ -1231,6 +1330,7 @@ function renderHistory() {
     const budgLabelHist = budgetLabel(t.budgetId);
     const budgBadge = budgLabelHist ? `<span class="cat-tag" style="margin-right:4px;">🏷️ ${escapeAttr(budgLabelHist)}</span>` : "";
     tr.innerHTML = `
+      <td class="ops-check-td"><input type="checkbox" class="ops-row-check" data-tx-id="${t.id}" aria-label="Sélectionner cette opération" ${selectedOpsIds.has(t.id) ? "checked" : ""}></td>
       <td><div class="ops-cell"><span class="date-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="date-display-icon"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="date-display-text">${formatDateShort(t.date)}</span></span></div></td>
       <td><div class="ops-cell"><span class="cat-display cat-pill-select" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Changer la catégorie">${cat ? catLabel(cat) : "Sans catégorie"}</span></div></td>
       <td><div class="ops-cell">${projBadge}${devBadge}<span class="note-display" data-tx-id="${t.id}" tabindex="0" role="button" aria-label="Modifier la note">${t.note ? escapeAttr(t.note) : '<span class="note-placeholder">Ajouter une note</span>'}</span></div></td>
@@ -1239,6 +1339,8 @@ function renderHistory() {
       <td><div class="ops-cell ops-cell-actions"><button class="icon-btn" data-edit-tx="${t.id}" aria-label="Modifier l'opération"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button><button class="icon-btn" data-delete-tx="${t.id}" aria-label="Supprimer l'opération">✕</button></div></td>`;
     body.appendChild(tr);
   });
+
+  updateOpsBulkBar();
 }
 
 document.getElementById("historyFilter").addEventListener("change", renderHistory);
@@ -1310,6 +1412,12 @@ document.getElementById("historyAllMonths")?.addEventListener("change", renderHi
 })();
 
 document.getElementById("historyBody").addEventListener("change", (e) => {
+  if (e.target.classList.contains("ops-row-check")) {
+    const id = e.target.dataset.txId;
+    if (e.target.checked) selectedOpsIds.add(id); else selectedOpsIds.delete(id);
+    updateOpsBulkBar();
+    return;
+  }
   const txId = e.target.dataset.txId;
   if (!txId) return;
   const t = state.transactions.find(tx => tx.id === txId);
@@ -1350,6 +1458,53 @@ document.getElementById("historyBody").addEventListener("change", (e) => {
       t.amount = val;
     }
   }
+  saveState();
+  renderHistory();
+  renderDashboard();
+  renderSavings();
+});
+
+// Case "tout sélectionner" en tête de tableau : coche/décoche toutes les lignes
+// actuellement affichées (respecte donc le filtre/recherche en cours).
+document.getElementById("opsSelectAllCheckbox").addEventListener("change", (e) => {
+  const checked = e.target.checked;
+  document.querySelectorAll("#historyBody .ops-row-check").forEach(cb => {
+    cb.checked = checked;
+    if (checked) selectedOpsIds.add(cb.dataset.txId); else selectedOpsIds.delete(cb.dataset.txId);
+  });
+  updateOpsBulkBar();
+});
+
+document.getElementById("opsBulkClearBtn").addEventListener("click", () => {
+  selectedOpsIds.clear();
+  document.querySelectorAll("#historyBody .ops-row-check").forEach(cb => { cb.checked = false; });
+  updateOpsBulkBar();
+});
+
+// Changement de catégorie groupé : applique la catégorie choisie à toutes les
+// opérations cochées (même logique de dé-rattachement projet/épargne que pour
+// une modification individuelle, voir plus haut).
+document.getElementById("opsBulkCatMenu").addEventListener("click", (e) => {
+  const catId = e.target.dataset.bulkCat;
+  if (!catId || !selectedOpsIds.size) return;
+  selectedOpsIds.forEach(id => {
+    const t = state.transactions.find(tx => tx.id === id);
+    if (!t) return;
+    if (catId !== "epargne") {
+      if (t.projectId) {
+        const proj = state.projects.find(p => p.id === t.projectId);
+        if (proj) proj.saved = Math.max(0, (proj.saved || 0) - Math.abs(t.amount));
+        t.projectId = null;
+      }
+      if (t.savingsDeviceId) {
+        adjustSavingsDevice(monthDateKey(t.date), t.savingsDeviceId, -Math.abs(t.amount));
+        t.savingsDeviceId = null;
+      }
+    }
+    t.categoryId = catId;
+  });
+  document.getElementById("opsBulkCatMenu").classList.remove("open");
+  selectedOpsIds.clear();
   saveState();
   renderHistory();
   renderDashboard();
