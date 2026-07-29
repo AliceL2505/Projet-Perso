@@ -424,6 +424,10 @@ const CATEGORY_COLORS = {
   amenagement: "#A98B7A",
   epargne: "#6E2C3B",
   epargne_tf: "#8B9DC3",
+  // "sport" n'avait pas de couleur dédiée : selon le rang de dépense du mois, son
+  // fallback (PIE_COLORS[0]) pouvait tomber exactement sur la couleur de "courses".
+  sport: "#5C8B93",
+  louise_sport: "#5C8B93",
 };
 function categoryColor(catId, fallbackIndex) {
   return CATEGORY_COLORS[catId] || PIE_COLORS[fallbackIndex % PIE_COLORS.length];
@@ -1250,6 +1254,101 @@ function escapeAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/* ---------------- Filtres par colonne (tableau Opérations) ----------------
+   Petit picto "filtrer" à côté de chaque intitulé, façon Excel : un menu à
+   cases à cocher liste les valeurs distinctes présentes dans la colonne (sur
+   le mois / la période affichée), et on peut en décocher certaines. On stocke,
+   par colonne, l'ensemble des valeurs EXCLUES (un ensemble vide = pas de filtre,
+   tout est affiché) : ça permet à "Tout sélectionner" de rester la valeur par
+   défaut sans avoir à connaître la liste complète à l'avance. */
+const OPS_FILTER_COLUMNS = {
+  date: { key: t => t.date, label: t => formatDateShort(t.date) },
+  category: {
+    key: t => t.categoryId || "__none__",
+    label: t => { const c = catById(t.categoryId); return c ? catLabel(c) : "Sans catégorie"; },
+  },
+  note: {
+    key: t => (t.note || "").trim() || "__none__",
+    label: t => (t.note || "").trim() || "(Aucune note)",
+  },
+  budget: {
+    key: t => t.budgetId || "__none__",
+    label: t => budgetLabel(t.budgetId) || "(Aucun budget)",
+  },
+  amount: {
+    key: t => t.amount.toFixed(2),
+    label: t => `${formatAmountShort(t.amount)} €`,
+  },
+};
+
+const opsColumnFilters = { date: new Set(), category: new Set(), note: new Set(), budget: new Set(), amount: new Set() };
+
+function opsRowPassesColumnFilters(t) {
+  return Object.keys(OPS_FILTER_COLUMNS).every(colKey => {
+    const excluded = opsColumnFilters[colKey];
+    if (excluded.size === 0) return true;
+    return !excluded.has(OPS_FILTER_COLUMNS[colKey].key(t));
+  });
+}
+
+// Reconstruit le contenu de chaque menu de filtre à partir des opérations de la
+// période affichée (avant application des filtres eux-mêmes, pour que la liste
+// des choix possibles reste stable pendant qu'on coche/décoche).
+function renderOpsColumnFilterMenus(baseTxs) {
+  Object.keys(OPS_FILTER_COLUMNS).forEach(colKey => {
+    const menu = document.getElementById(`opsFilterMenu-${colKey}`);
+    if (!menu) return;
+    const cfg = OPS_FILTER_COLUMNS[colKey];
+    const seen = new Map();
+    baseTxs.forEach(t => {
+      const k = cfg.key(t);
+      if (!seen.has(k)) seen.set(k, cfg.label(t));
+    });
+    const entries = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1], "fr"));
+    const excluded = opsColumnFilters[colKey];
+    const anyChecked = entries.some(([k]) => !excluded.has(k));
+    const allChecked = entries.every(([k]) => !excluded.has(k));
+
+    const btn = document.querySelector(`[data-toggle-menu="opsFilterMenu-${colKey}"]`);
+    if (btn) btn.classList.toggle("active", excluded.size > 0);
+
+    menu.innerHTML = `
+      <label class="col-filter-option col-filter-option-all">
+        <input type="checkbox" class="ops-row-check col-filter-master" data-colfilter-col="${colKey}" ${allChecked ? "checked" : ""}>
+        Tout sélectionner
+      </label>
+      <div class="col-filter-divider"></div>
+      ${entries.length ? entries.map(([k, label]) => `
+        <label class="col-filter-option">
+          <input type="checkbox" class="ops-row-check col-filter-value" data-colfilter-col="${colKey}" data-colfilter-key="${escapeAttr(k)}" ${excluded.has(k) ? "" : "checked"}>
+          ${escapeAttr(label) || "&nbsp;"}
+        </label>
+      `).join("") : `<p class="hint" style="padding:6px 14px; margin:0;">Aucune valeur ce mois-ci</p>`}
+    `;
+    const master = menu.querySelector(".col-filter-master");
+    if (master) master.indeterminate = !allChecked && anyChecked;
+  });
+}
+
+document.querySelector("#opsTable thead").addEventListener("change", (e) => {
+  const t = e.target;
+  const colKey = t.dataset.colfilterCol;
+  if (!colKey) return;
+  if (t.classList.contains("col-filter-master")) {
+    if (t.checked) {
+      opsColumnFilters[colKey].clear();
+    } else {
+      const parentMenu = t.closest(".dropdown-menu");
+      parentMenu.querySelectorAll(".col-filter-value").forEach(cb => opsColumnFilters[colKey].add(cb.dataset.colfilterKey));
+    }
+    renderHistory();
+  } else if (t.classList.contains("col-filter-value")) {
+    if (t.checked) opsColumnFilters[colKey].delete(t.dataset.colfilterKey);
+    else opsColumnFilters[colKey].add(t.dataset.colfilterKey);
+    renderHistory();
+  }
+});
+
 // Sélection multiple (case à cocher tout à gauche de chaque ligne) pour changer
 // la catégorie de plusieurs opérations à la fois. Persiste tant que les
 // opérations existent, même si la ligne n'est plus affichée (recherche/filtre) :
@@ -1295,8 +1394,10 @@ function renderHistory() {
   const titleEl = document.querySelector("#panel-add .history-header .section-title");
   if (titleEl) titleEl.textContent = allMonths ? "Historique (toutes les périodes)" : "Historique du mois";
   const baseTxs = allMonths ? state.transactions.slice() : transactionsForMonth(currentMonth);
+  renderOpsColumnFilterMenus(baseTxs);
   const txs = baseTxs
     .filter(t => filterValue === "all" || t.categoryId === filterValue)
+    .filter(opsRowPassesColumnFilters)
     .filter(t => {
       if (!searchValue) return true;
       const cat = catById(t.categoryId);
