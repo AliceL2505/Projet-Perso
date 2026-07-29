@@ -1865,11 +1865,63 @@ input:focus, select:focus {
 }
 #opsSelectAllCheckbox,
 .ops-row-check {
-  width: 15px;
-  height: 15px;
+  /* Redéfinition complète : la règle générale "input, select" (padding 10px 12px,
+     bordure, fond blanc) écrasait le rendu natif de la case et l'empêchait
+     d'afficher visuellement son état coché — d'où l'impression que rien ne se
+     passait au clic. On repart d'un carré dessiné à la main, en lie-de-vin
+     une fois coché. */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
   margin: 0;
+  box-sizing: border-box;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
   cursor: pointer;
-  accent-color: var(--wine);
+  position: relative;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+#opsSelectAllCheckbox:hover,
+.ops-row-check:hover { border-color: var(--wine); }
+#opsSelectAllCheckbox:checked,
+.ops-row-check:checked {
+  background: var(--wine);
+  border-color: var(--wine);
+}
+#opsSelectAllCheckbox:checked::after,
+.ops-row-check:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+#opsSelectAllCheckbox:indeterminate {
+  background: var(--wine);
+  border-color: var(--wine);
+}
+#opsSelectAllCheckbox:indeterminate::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 6.5px;
+  width: 8px;
+  height: 2px;
+  background: #fff;
+}
+#opsSelectAllCheckbox:focus-visible,
+.ops-row-check:focus-visible {
+  outline: 2px solid var(--wine);
+  outline-offset: 1px;
 }
 .bulk-actions-bar {
   display: flex;
